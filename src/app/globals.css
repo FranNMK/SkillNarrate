@@ -1,0 +1,48 @@
+/*
+ * src/app/globals.css
+ *
+ * Tailwind v4 uses a single @import directive instead of the old
+ * @tailwind base/components/utilities directives.
+ *
+ * We also define our brand design tokens as CSS custom properties here.
+ * This means you can use them in any CSS rule: var(--color-teal-600)
+ * They are also picked up by Tailwind's theme() function.
+ */
+
+@import "tailwindcss";
+
+/* ----------------------------------------------------------
+   Brand colour tokens
+   These map to the SkillNarrate palette defined in the brief.
+---------------------------------------------------------- */
+:root {
+  /* Primary — deep teal */
+  --color-brand-primary: #0f766e;
+
+  /* Secondary — warm amber */
+  --color-brand-secondary: #f59e0b;
+
+  /* Accent — terracotta */
+  --color-brand-accent: #c2410c;
+
+  /* Text — charcoal */
+  --color-brand-text: #1f2937;
+
+  /* Background — off-white */
+  --color-brand-bg: #f9fafb;
+}
+
+/* ----------------------------------------------------------
+   Base resets / sensible defaults
+---------------------------------------------------------- */
+body {
+  background-color: var(--color-brand-bg);
+  color: var(--color-brand-text);
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

@@ -1,0 +1,11 @@
+/*
+ * src/components/features/.gitkeep
+ *
+ * This folder will hold feature-specific components that contain business logic:
+ *   InterviewChat, ProjectCard, ContentPreview, OutputEditor, etc.
+ *
+ * These components know about SkillNarrate concepts (projects, interviews, outputs).
+ * They can import from src/components/ui/ and src/lib/ but not vice versa.
+ *
+ * Created in Phase 2 when we build the interview flow.
+ */

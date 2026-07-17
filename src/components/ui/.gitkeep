@@ -1,0 +1,11 @@
+/*
+ * src/components/ui/.gitkeep
+ *
+ * This folder will hold generic, reusable UI primitives with no business logic:
+ *   Button, Card, Input, Badge, Modal, Spinner, etc.
+ *
+ * These are components you could theoretically use in any project.
+ * They know nothing about SkillNarrate features.
+ *
+ * Created in Phase 1 when we build the first real UI.
+ */
