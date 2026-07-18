@@ -15,7 +15,7 @@ Built for the **AI Builders Challenge with IBM Bob** (July 2026, Creative Indust
 | Frontend | [Next.js 15](https://nextjs.org) (App Router) + TypeScript |
 | Styling | [Tailwind CSS v4](https://tailwindcss.com) |
 | Backend / DB / Auth | [Supabase](https://supabase.com) |
-| AI (runtime) | [IBM watsonx.ai](https://www.ibm.com/watsonx) — Granite model |
+| AI (runtime) | [Google Gemini API](https://aistudio.google.com) — Gemini 2.0/1.5 Flash |
 | Transactional Email | [Resend](https://resend.com) |
 | Deployment | [Vercel](https://vercel.com) |
 
@@ -70,7 +70,7 @@ src/
 │   ├── (auth)/              # Login, signup, password reset pages
 │   ├── (dashboard)/         # Logged-in app pages
 │   ├── api/
-│   │   ├── watsonx/         # Server route — calls IBM watsonx.ai
+│   │   ├── gemini/          # Server route — calls Google Gemini API
 │   │   └── email/           # Server route — sends via Resend
 │   ├── layout.tsx           # Root HTML shell
 │   └── page.tsx             # Landing page "/"
@@ -81,7 +81,7 @@ src/
 │   ├── supabase/
 │   │   ├── client.ts        # Browser Supabase client
 │   │   └── server.ts        # Server Supabase client (cookies-based)
-│   ├── watsonx.ts           # watsonx.ai REST helper
+│   ├── gemini.ts            # Gemini API REST helper
 │   └── resend.ts            # Resend email helper
 ├── middleware.ts             # Session refresh middleware (runs on every request)
 └── types/
@@ -97,16 +97,16 @@ Browser (React)
     │
     │── reads/writes → Supabase (auth + database, using anon key + RLS)
     │
-    │── POST → /api/watsonx/generate  (Next.js API Route — server only)
+    │── POST → /api/gemini/generate  (Next.js API Route — server only)
     │                │
-    │                └──► IBM watsonx.ai  (Granite model, API key stays secret)
+    │                └──► Google Gemini API  (2.0/1.5 Flash, API key stays secret)
     │
     └── POST → /api/email/send  (Next.js API Route — server only)
                      │
                      └──► Resend  (API key stays secret)
 ```
 
-**The golden rule:** `WATSONX_API_KEY`, `RESEND_API_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are server-only secrets. They never reach the browser.
+**The golden rule:** `GEMINI_API_KEY`, `RESEND_API_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are server-only secrets. They never reach the browser.
 
 ---
 
