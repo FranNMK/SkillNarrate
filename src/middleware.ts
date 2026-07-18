@@ -20,8 +20,10 @@
  * so we don't run auth logic on images, CSS, etc.
  */
 
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieMethodsServer } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+
+type SetAllCookies = Parameters<NonNullable<CookieMethodsServer["setAll"]>>[0];
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -34,7 +36,7 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: SetAllCookies) {
           // First update the outgoing request cookies (for downstream middleware)
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)

@@ -13,9 +13,13 @@
  * so auth sessions stay in sync between server renders and client navigation.
  */
 
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieMethodsServer } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "@/types/database";
+
+// CookieMethodsServer["setAll"] gives us the correct type for the cookiesToSet
+// parameter so TypeScript knows the shape of each cookie object.
+type SetAllCookies = Parameters<NonNullable<CookieMethodsServer["setAll"]>>[0];
 
 export async function createClient() {
   // cookies() from next/headers gives us access to the request's cookie jar
@@ -29,7 +33,7 @@ export async function createClient() {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: SetAllCookies) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, options);
