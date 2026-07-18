@@ -117,7 +117,7 @@ Browser (React)
 | **0** | Project setup & scaffolding | ✅ Complete |
 | **1** | Supabase auth + database schema + RLS | 🔜 Next |
 | **2** | Dashboard — project CRUD | ⏳ Pending |
-| **3** | AI interview engine (watsonx.ai) | ⏳ Pending |
+| **3** | AI interview engine (Gemini API) | ⏳ Pending |
 | **4** | Content generation & editor | ⏳ Pending |
 | **5** | Polish, onboarding email, deploy to Vercel | ⏳ Pending |
 
