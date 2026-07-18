@@ -43,27 +43,27 @@ export default function LandingPage() {
           border: "1px solid var(--color-brand-secondary)",
         }}
       >
-        🚧 Phase 0 — Scaffolding complete
+        ✨ Phase 2 — Auth live
       </div>
 
       {/* ── Placeholder CTA buttons ── */}
       <div className="flex gap-4 flex-wrap justify-center">
         <Link
-          href="/auth/login"
+          href="/signup"
           className="px-6 py-3 rounded-lg text-white font-semibold transition-opacity hover:opacity-90"
           style={{ backgroundColor: "var(--color-brand-primary)" }}
         >
-          Get Started
+          Get started free
         </Link>
         <Link
-          href="/dashboard"
+          href="/login"
           className="px-6 py-3 rounded-lg font-semibold border-2 transition-colors hover:bg-gray-50"
           style={{
             borderColor: "var(--color-brand-primary)",
             color: "var(--color-brand-primary)",
           }}
         >
-          Dashboard →
+          Sign in →
         </Link>
       </div>
     </main>

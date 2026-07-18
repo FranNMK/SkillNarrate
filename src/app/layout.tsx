@@ -29,7 +29,8 @@ export const metadata: Metadata = {
     "AI writing",
     "TVET",
     "technical students",
-    "IBM watsonx",
+    "Gemini AI",
+    "Kenya",
   ],
 };
 
