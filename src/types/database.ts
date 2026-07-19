@@ -69,6 +69,7 @@ export type Project = {
   user_id: string;                 // UUID
   title: string;
   description: string | null;
+  output_type: OutputType;         // chosen at project creation
   raw_interview_answers: InterviewQA[]; // typed JSONB
   interview_completed: boolean;
   created_at: string;
@@ -120,8 +121,8 @@ export type Database = {
       };
       projects: {
         Row: Project;
-        // Insert: user_id and title are required. id/timestamps are auto-generated.
-        Insert: Pick<Project, "user_id" | "title"> & Partial<Omit<Project, "user_id" | "title" | "id" | "created_at" | "updated_at">>;
+        // Insert: user_id, title, and output_type are required. id/timestamps are auto-generated.
+        Insert: Pick<Project, "user_id" | "title" | "output_type"> & Partial<Omit<Project, "user_id" | "title" | "output_type" | "id" | "created_at" | "updated_at">>;
         Update: Partial<Omit<Project, "id" | "user_id" | "created_at">>;
       };
       outputs: {

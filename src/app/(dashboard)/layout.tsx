@@ -61,13 +61,25 @@ export default async function DashboardLayout({
           SkillNarrate
         </Link>
 
-        {/* Nav links — will grow in Phase 4 */}
+        {/* Nav links */}
         <nav className="hidden sm:flex items-center gap-1 ml-2">
           <Link
             href="/dashboard"
             className="px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
           >
             My Projects
+          </Link>
+          <Link
+            href="/projects/new"
+            className="px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+          >
+            + New Project
+          </Link>
+          <Link
+            href="/settings/portfolio"
+            className="px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+          >
+            Portfolio
           </Link>
         </nav>
 

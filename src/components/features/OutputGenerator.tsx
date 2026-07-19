@@ -1,0 +1,389 @@
+"use client";
+/*
+ * src/components/features/OutputGenerator.tsx
+ *
+ * The content generation UI
+ * ───────────────────────────
+ * This Client Component is rendered on the /projects/[id]/generate page.
+ * It lets the student:
+ *
+ *  1. Click "Generate" → calls POST /api/outputs/generate → Gemini synthesizes
+ *     their interview into a polished case study / LinkedIn post / etc.
+ *  2. Read the result in a formatted preview panel
+ *  3. Copy the content to clipboard (one click)
+ *  4. Regenerate with a tone adjustment ("make it shorter", "more casual")
+ *  5. Publish to their portfolio (form action → publishOutputAction)
+ *  6. Unpublish if needed (form action → unpublishOutputAction)
+ *
+ * WHY IS THIS A CLIENT COMPONENT?
+ * The Generate button, loading state, clipboard API, and tone adjustment
+ * all require browser APIs and React state — they can't run on the server.
+ * We keep the page wrapper as a Server Component (which does the DB read),
+ * and hand off to this Client Component for interactivity.
+ */
+
+import { useState } from "react";
+import { publishOutputAction, unpublishOutputAction } from "@/lib/actions/outputs";
+import type { OutputType } from "@/types/database";
+
+// ── Props ─────────────────────────────────────────────────────
+interface OutputGeneratorProps {
+  projectId: string;
+  projectTitle: string;
+  outputType: OutputType;
+  // If the student has generated before, we pre-load the existing content
+  existingOutput?: {
+    id: string;
+    content: string;
+    isPublished: boolean;
+  } | null;
+}
+
+// ── Display helpers ───────────────────────────────────────────
+const OUTPUT_TYPE_LABELS: Record<OutputType, string> = {
+  case_study:       "Case Study",
+  linkedin_post:    "LinkedIn Post",
+  pitch_script:     "Pitch Script",
+  interview_answer: "Interview Answer",
+};
+
+const OUTPUT_TYPE_ICONS: Record<OutputType, string> = {
+  case_study:       "📄",
+  linkedin_post:    "💼",
+  pitch_script:     "🎤",
+  interview_answer: "🎯",
+};
+
+// ── Formatting helper ─────────────────────────────────────────
+// Converts Gemini's markdown-ish output to simple JSX.
+// We handle ## headings, **bold**, and newlines. No need for a full
+// markdown library for these simple patterns.
+function FormattedContent({ text }: { text: string }) {
+  const lines = text.split("\n");
+
+  return (
+    <div className="space-y-3 text-sm leading-relaxed text-gray-800">
+      {lines.map((line, i) => {
+        if (line.startsWith("## ")) {
+          return (
+            <h3 key={i} className="text-base font-bold mt-5 mb-2 pt-2 border-t border-gray-100 first:border-t-0 first:pt-0 first:mt-0"
+              style={{ color: "var(--color-brand-text)" }}>
+              {line.slice(3)}
+            </h3>
+          );
+        }
+        if (line.startsWith("**") && line.endsWith("**")) {
+          return (
+            <p key={i} className="font-semibold text-gray-900">{line.slice(2, -2)}</p>
+          );
+        }
+        if (line.trim() === "") {
+          return <div key={i} className="h-1" />;
+        }
+        // Handle inline **bold** within a line
+        const parts = line.split(/(\*\*[^*]+\*\*)/g);
+        return (
+          <p key={i}>
+            {parts.map((part, j) =>
+              part.startsWith("**") && part.endsWith("**")
+                ? <strong key={j}>{part.slice(2, -2)}</strong>
+                : part
+            )}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────
+// MAIN COMPONENT
+// ──────────────────────────────────────────────────────────────
+export default function OutputGenerator({
+  projectId,
+  projectTitle,
+  outputType,
+  existingOutput,
+}: OutputGeneratorProps) {
+  // ── State ──────────────────────────────────────────────────
+  const [content, setContent] = useState<string>(existingOutput?.content ?? "");
+  const [outputId, setOutputId] = useState<string | null>(existingOutput?.id ?? null);
+  const [isPublished, setIsPublished] = useState(existingOutput?.isPublished ?? false);
+
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [toneInstruction, setToneInstruction] = useState("");
+  const [showToneInput, setShowToneInput] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  const outputLabel = OUTPUT_TYPE_LABELS[outputType];
+  const outputIcon  = OUTPUT_TYPE_ICONS[outputType];
+  const hasContent  = content.length > 0;
+
+  // ── Generate content ───────────────────────────────────────
+  const handleGenerate = async (tone?: string) => {
+    setIsGenerating(true);
+    setError(null);
+    setCopySuccess(false);
+
+    try {
+      const response = await fetch("/api/outputs/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId,
+          toneInstruction: tone?.trim() || undefined,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Failed to generate content");
+      }
+
+      setContent(data.content);
+      setOutputId(data.outputId);
+      setIsPublished(false); // regenerated content is unpublished by default
+      setToneInstruction("");
+      setShowToneInput(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // ── Copy to clipboard ──────────────────────────────────────
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2500);
+    } catch {
+      // Fallback for older browsers or blocked clipboard access
+      const textarea = document.createElement("textarea");
+      textarea.value = content;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2500);
+    }
+  };
+
+  // ──────────────────────────────────────────────────────────
+  // RENDER
+  // ──────────────────────────────────────────────────────────
+  return (
+    <div className="space-y-6">
+      {/* ── Error banner ── */}
+      {error && (
+        <div className="px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+          {error}
+        </div>
+      )}
+
+      {/* ── Main card ── */}
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        {/* Card header */}
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">{outputIcon}</span>
+            <div>
+              <h2 className="font-semibold text-gray-900 text-sm">{outputLabel}</h2>
+              <p className="text-xs text-gray-400">{projectTitle}</p>
+            </div>
+          </div>
+
+          {/* Status badge */}
+          {hasContent && (
+            <span
+              className="px-2.5 py-1 rounded-full text-xs font-semibold"
+              style={
+                isPublished
+                  ? { backgroundColor: "#f0fdf4", color: "#15803d" }
+                  : { backgroundColor: "#f3f4f6", color: "#6b7280" }
+              }
+            >
+              {isPublished ? "✓ Published to portfolio" : "Draft"}
+            </span>
+          )}
+        </div>
+
+        {/* Content area */}
+        <div className="px-6 py-6">
+          {!hasContent && !isGenerating ? (
+            /* ── Empty state — no content yet ── */
+            <div className="text-center py-12">
+              <div className="text-5xl mb-4">{outputIcon}</div>
+              <p className="text-gray-600 font-medium mb-2">
+                Ready to generate your {outputLabel}
+              </p>
+              <p className="text-sm text-gray-400 max-w-sm mx-auto mb-6">
+                Gemini will synthesize your {Math.max(1, 0)} interview answers into a
+                polished {outputLabel.toLowerCase()}. Takes about 10-15 seconds.
+              </p>
+              <button
+                onClick={() => handleGenerate()}
+                className="px-6 py-3 rounded-xl text-white font-semibold text-sm transition-opacity hover:opacity-90"
+                style={{ backgroundColor: "var(--color-brand-primary)" }}
+              >
+                ✨ Generate {outputLabel}
+              </button>
+            </div>
+          ) : isGenerating ? (
+            /* ── Loading state ── */
+            <div className="text-center py-12">
+              <div className="inline-flex gap-1.5 mb-4">
+                {[0, 150, 300].map((delay) => (
+                  <div
+                    key={delay}
+                    className="w-2 h-2 rounded-full animate-bounce"
+                    style={{
+                      backgroundColor: "var(--color-brand-primary)",
+                      animationDelay: `${delay}ms`,
+                    }}
+                  />
+                ))}
+              </div>
+              <p className="text-sm text-gray-500 font-medium">
+                Gemini is writing your {outputLabel}…
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                This takes 10-20 seconds
+              </p>
+            </div>
+          ) : (
+            /* ── Content preview ── */
+            <div>
+              <FormattedContent text={content} />
+            </div>
+          )}
+        </div>
+
+        {/* Action bar (only shown when there's content) */}
+        {hasContent && !isGenerating && (
+          <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center gap-3 flex-wrap">
+            {/* Copy to clipboard */}
+            <button
+              onClick={handleCopy}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              {copySuccess ? "✓ Copied!" : "📋 Copy"}
+            </button>
+
+            {/* Regenerate */}
+            <button
+              onClick={() => setShowToneInput((v) => !v)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              🔄 Regenerate
+            </button>
+
+            {/* Publish / Unpublish */}
+            {outputId && (
+              isPublished ? (
+                <form action={unpublishOutputAction}>
+                  <input type="hidden" name="output_id" value={outputId} />
+                  <input type="hidden" name="project_id" value={projectId} />
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors"
+                    style={{ borderColor: "#ef4444", color: "#ef4444", backgroundColor: "#fff" }}
+                  >
+                    Remove from Portfolio
+                  </button>
+                </form>
+              ) : (
+                <form action={publishOutputAction}>
+                  <input type="hidden" name="output_id" value={outputId} />
+                  <input type="hidden" name="project_id" value={projectId} />
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold transition-opacity hover:opacity-90"
+                    style={{ backgroundColor: "var(--color-brand-secondary)", color: "#1f2937" }}
+                  >
+                    🌐 Add to Portfolio
+                  </button>
+                </form>
+              )
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Tone adjustment panel (shown when Regenerate is clicked) ── */}
+      {showToneInput && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <h3 className="text-sm font-semibold text-gray-700 mb-1">
+            Adjust the tone or style
+          </h3>
+          <p className="text-xs text-gray-400 mb-3">
+            Tell Gemini how to change it. Examples: &ldquo;make it shorter&rdquo;,
+            &ldquo;more technical and formal&rdquo;, &ldquo;more casual and friendly&rdquo;,
+            &ldquo;add more detail about the technologies used&rdquo;.
+          </p>
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={toneInstruction}
+              onChange={(e) => setToneInstruction(e.target.value)}
+              placeholder="e.g. make it more concise"
+              className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+              style={{ "--tw-ring-color": "var(--color-brand-primary)" } as React.CSSProperties}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleGenerate(toneInstruction);
+              }}
+            />
+            <button
+              onClick={() => handleGenerate(toneInstruction)}
+              disabled={isGenerating}
+              className="px-4 py-2.5 rounded-xl text-white text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50 shrink-0"
+              style={{ backgroundColor: "var(--color-brand-primary)" }}
+            >
+              ✨ Regenerate
+            </button>
+          </div>
+
+          {/* Quick tone presets */}
+          <div className="flex gap-2 mt-3 flex-wrap">
+            {[
+              "Make it shorter",
+              "Make it more formal",
+              "Make it more casual",
+              "Add more technical detail",
+              "Add measurable results",
+            ].map((preset) => (
+              <button
+                key={preset}
+                onClick={() => {
+                  setToneInstruction(preset);
+                  handleGenerate(preset);
+                }}
+                className="px-3 py-1 rounded-full text-xs border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                {preset}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── First-time generate button (shown above card when content exists) ── */}
+      {!hasContent && !isGenerating && (
+        <div className="text-center">
+          <button
+            onClick={() => handleGenerate()}
+            disabled={isGenerating}
+            className="px-8 py-3 rounded-xl text-white font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+            style={{ backgroundColor: "var(--color-brand-primary)" }}
+          >
+            ✨ Generate {outputLabel}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
