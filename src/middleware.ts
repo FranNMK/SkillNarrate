@@ -31,7 +31,9 @@ import { NextResponse, type NextRequest } from "next/server";
 type SetAllCookies = Parameters<NonNullable<CookieMethodsServer["setAll"]>>[0];
 
 // Routes that require a logged-in user
-const PROTECTED_ROUTES = ["/dashboard", "/onboarding", "/projects", "/portfolio-settings"];
+// NOTE: /portfolio/* is intentionally NOT here — those are public pages.
+// /settings/* IS protected — that's where portfolio management lives.
+const PROTECTED_ROUTES = ["/dashboard", "/onboarding", "/projects", "/settings"];
 
 // Routes that logged-in users shouldn't see (auth pages)
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];

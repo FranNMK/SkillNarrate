@@ -231,6 +231,53 @@ export default async function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* ── Portfolio share card ── */}
+      {portfolioLink?.is_active ? (
+        <div
+          className="mt-8 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center gap-4"
+          style={{ backgroundColor: "var(--color-brand-primary)" }}
+        >
+          <div className="flex-1 text-white">
+            <p className="font-semibold text-sm mb-0.5">🌐 Your portfolio is live</p>
+            <p className="text-xs opacity-80 font-mono break-all">
+              {appUrl}/portfolio/{portfolioLink.slug}
+            </p>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <Link
+              href={`/portfolio/${portfolioLink.slug}`}
+              target="_blank"
+              className="px-3 py-2 rounded-lg bg-white text-xs font-semibold transition-opacity hover:opacity-90"
+              style={{ color: "var(--color-brand-primary)" }}
+            >
+              View ↗
+            </Link>
+            <Link
+              href="/settings/portfolio"
+              className="px-3 py-2 rounded-lg text-xs font-semibold text-white border border-white/40 hover:bg-white/10 transition-colors"
+            >
+              Settings
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-8 rounded-2xl p-5 border-2 border-dashed border-gray-200 bg-white flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex-1">
+            <p className="font-semibold text-sm text-gray-700 mb-0.5">Share your work publicly</p>
+            <p className="text-xs text-gray-400">
+              Activate your portfolio to get a shareable link for employers and LinkedIn.
+            </p>
+          </div>
+          <Link
+            href="/settings/portfolio"
+            className="shrink-0 px-4 py-2 rounded-lg text-white text-xs font-semibold transition-opacity hover:opacity-90"
+            style={{ backgroundColor: "var(--color-brand-primary)" }}
+          >
+            Set up portfolio →
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
