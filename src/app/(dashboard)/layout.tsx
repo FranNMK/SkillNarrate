@@ -29,13 +29,13 @@ export default async function DashboardLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Get their profile for the display name
+  // Get their profile for the display name + avatar
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profile } = user
-    ? await supabase
+    ? await (supabase as any)
         .from("profiles")
-        .select("full_name")
+        .select("full_name, avatar_url")
         .eq("id", user.id)
-        .returns<{ full_name: string | null }[]>()
         .single()
     : { data: null };
 
@@ -46,8 +46,9 @@ export default async function DashboardLayout({
     user?.email?.split("@")[0] ||
     "Student";
 
-  // First letter for the avatar circle
+  // Avatar: photo URL if set, otherwise first-letter initial
   const avatarInitial = displayName.charAt(0).toUpperCase();
+  const avatarUrl: string | null = (profile as { avatar_url?: string | null } | null)?.avatar_url ?? null;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--color-brand-bg)" }}>
@@ -110,12 +111,21 @@ export default async function DashboardLayout({
             className="shrink-0"
             title="Edit your profile"
           >
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold hover:opacity-80 transition-opacity"
-              style={{ backgroundColor: "var(--color-brand-primary)" }}
-            >
-              {avatarInitial}
-            </div>
+            {avatarUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={avatarUrl}
+                alt={displayName}
+                className="w-8 h-8 rounded-full object-cover hover:opacity-80 transition-opacity border border-gray-200"
+              />
+            ) : (
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold hover:opacity-80 transition-opacity"
+                style={{ backgroundColor: "var(--color-brand-primary)" }}
+              >
+                {avatarInitial}
+              </div>
+            )}
           </Link>
 
           {/* Display name — links to profile settings, hidden on very small screens */}

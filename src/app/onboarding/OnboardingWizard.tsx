@@ -217,11 +217,39 @@ function WizardInner({
          * SINGLE FORM — all inputs always mounted.
          * Only current step's inputs are visible.
          * This means FormData is always complete on submit.
+         *
+         * IMPORTANT: We intercept Enter key on all visible inputs to prevent
+         * accidental form submission (only the explicit "Finish" button submits).
          */}
         <form
           ref={formRef}
           action={completeOnboardingAction}
-          onSubmit={() => setPending(true)}
+          onSubmit={(e) => {
+            // Intercept submit on non-final steps (e.g. Enter key in an input)
+            if (currentStep < TOTAL_STEPS) {
+              e.preventDefault();
+              goNext();
+              return;
+            }
+            // Client-side validation before sending to server action
+            if (!fullName.trim()) {
+              e.preventDefault();
+              setCurrentStep(1);
+              return;
+            }
+            if (!institutionId) {
+              e.preventDefault();
+              setCurrentStep(2);
+              return;
+            }
+            if (!courseField.trim()) {
+              e.preventDefault();
+              // Stay on step 3 and focus the input
+              document.getElementById("course_field_display")?.focus();
+              return;
+            }
+            setPending(true);
+          }}
         >
           {/* Hidden inputs carry the controlled values to the server action */}
           <input type="hidden" name="full_name" value={fullName} />
@@ -242,6 +270,7 @@ function WizardInner({
               autoComplete="name"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); goNext(); } }}
               placeholder="e.g. Frank Mwangi"
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent"
             />
@@ -276,6 +305,7 @@ function WizardInner({
                 type="text"
                 value={courseField}
                 onChange={(e) => setCourseField(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
                 placeholder="e.g. Electrical Engineering, ICT, Fashion Design"
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent"
               />
@@ -296,6 +326,7 @@ function WizardInner({
                 max={2035}
                 value={graduationYear}
                 onChange={(e) => setGraduationYear(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
                 placeholder={String(new Date().getFullYear() + 1)}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent"
               />
