@@ -26,8 +26,17 @@
 const GEMINI_BASE_URL =
   "https://generativelanguage.googleapis.com/v1beta/models";
 
-// Default model — swap to "gemini-1.5-flash" if 2.0-flash isn't on your plan
+// Model fallback chain — we try each in order until one succeeds.
+// WHY A FALLBACK CHAIN?
+// Google's free tier quotas are per-model, not shared. If gemini-2.0-flash
+// exhausts its daily limit (15 RPM / 1500 RPD on free tier), gemini-1.5-flash
+// has its own separate quota. Trying both means a 429 on one model does NOT
+// break the whole app — we silently retry on the next model.
+//
+// gemini-2.0-flash   → fastest, most capable, try first
+// gemini-1.5-flash   → separate quota, reliable fallback
 export const DEFAULT_MODEL = "gemini-2.0-flash";
+const MODEL_FALLBACK_CHAIN = ["gemini-2.0-flash", "gemini-1.5-flash"];
 
 // ──────────────────────────────────────────────────────────
 // Types
@@ -77,7 +86,7 @@ export async function generateText(options: GenerateOptions): Promise<GenerateRe
   const {
     prompt,
     history = [],
-    model = DEFAULT_MODEL,
+    model,                    // if caller specifies a model, use only that
     maxOutputTokens = 1024,
     temperature = 0.7,
   } = options;
@@ -93,33 +102,50 @@ export async function generateText(options: GenerateOptions): Promise<GenerateRe
     { role: "user", parts: [{ text: prompt }] },
   ];
 
-  const url = `${GEMINI_BASE_URL}/${model}:generateContent?key=${apiKey}`;
+  // Decide which models to try.
+  // If the caller specified a model explicitly, use only that (no fallback).
+  // Otherwise, walk the fallback chain until one succeeds.
+  const modelsToTry = model ? [model] : MODEL_FALLBACK_CHAIN;
+  let lastError: Error | null = null;
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents,
-      generationConfig: {
-        maxOutputTokens,
-        temperature,
-        // Slightly penalise repetition for cleaner output
-        candidateCount: 1,
-      },
-    }),
-  });
+  for (const currentModel of modelsToTry) {
+    const url = `${GEMINI_BASE_URL}/${currentModel}:generateContent?key=${apiKey}`;
 
-  if (!response.ok) {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents,
+        generationConfig: {
+          maxOutputTokens,
+          temperature,
+          candidateCount: 1,
+        },
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      // Gemini returns: data.candidates[0].content.parts[0].text
+      const candidate = data.candidates?.[0];
+      const text: string = candidate?.content?.parts?.[0]?.text ?? "";
+      const finishReason: string = candidate?.finishReason ?? "UNKNOWN";
+      return { text, finishReason };
+    }
+
+    // 429 = rate-limited / quota exhausted → try next model in chain
+    // Any other error (400, 403, 500) → don't bother retrying, throw immediately
     const errorBody = await response.text();
-    throw new Error(`Gemini API error ${response.status}: ${errorBody}`);
+    lastError = new Error(`Gemini API error ${response.status} (${currentModel}): ${errorBody}`);
+
+    if (response.status !== 429) {
+      throw lastError;
+    }
+
+    // Log the 429 and try the next model
+    console.warn(`[Gemini] ${currentModel} returned 429 (quota exhausted), trying next model…`);
   }
 
-  const data = await response.json();
-
-  // Gemini returns: data.candidates[0].content.parts[0].text
-  const candidate = data.candidates?.[0];
-  const text: string = candidate?.content?.parts?.[0]?.text ?? "";
-  const finishReason: string = candidate?.finishReason ?? "UNKNOWN";
-
-  return { text, finishReason };
+  // All models exhausted
+  throw lastError ?? new Error("All Gemini models exhausted or unavailable.");
 }

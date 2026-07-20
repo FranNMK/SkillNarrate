@@ -1,5 +1,8 @@
 /*
  * src/app/(dashboard)/settings/portfolio/page.tsx  →  URL: /settings/portfolio
+ * NOTE: This is a Server Component. Interactive buttons (copy, confirm-regenerate)
+ * are extracted into Client Components (RegenerateSlugButton) or handled via
+ * inline <script> tags so no onClick lives in this file.
  *
  * Portfolio settings page
  * ─────────────────────────
@@ -23,8 +26,8 @@ import { createClient } from "@/lib/supabase/server";
 import {
   createOrActivatePortfolioAction,
   togglePortfolioActiveAction,
-  regenerateSlugAction,
 } from "@/lib/actions/portfolio";
+import { RegenerateSlugButton } from "@/components/features/RegenerateSlugButton";
 import type { OutputType } from "@/types/database";
 
 export const metadata = { title: "Portfolio Settings — SkillNarrate" };
@@ -178,14 +181,11 @@ export default async function PortfolioSettingsPage({
                   <code className="flex-1 text-sm font-mono text-gray-800 break-all">
                     {portfolioUrl}
                   </code>
-                  {/* Copy button — uses a small inline script so no Client Component needed */}
+                  {/* Copy button — driven by the inline <script> at the bottom of the page */}
                   <button
-                    onClick={undefined}
                     id="copy-btn"
                     data-url={portfolioUrl}
                     className="shrink-0 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-white transition-colors"
-                    // We use a data attribute + inline onclick so this works without
-                    // a full client component. The script tag below handles the click.
                   >
                     Copy
                   </button>
@@ -218,20 +218,8 @@ export default async function PortfolioSettingsPage({
                   </button>
                 </form>
 
-                {/* Regenerate slug */}
-                <form action={regenerateSlugAction}>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-                    onClick={(e) => {
-                      if (!confirm("This will change your portfolio URL. Your old link will stop working. Continue?")) {
-                        e.preventDefault();
-                      }
-                    }}
-                  >
-                    🔄 Regenerate URL
-                  </button>
-                </form>
+                {/* Regenerate slug — Client Component handles the confirm() dialog */}
+                <RegenerateSlugButton />
               </div>
             </div>
           )}

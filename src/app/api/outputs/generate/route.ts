@@ -311,9 +311,17 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("[/api/outputs/generate] Error:", error);
+
+    const message = error instanceof Error ? error.message : "";
+    const isQuota = message.includes("429") || message.includes("quota") || message.includes("RESOURCE_EXHAUSTED");
+
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to generate content. Please try again." },
-      { status: 500 }
+      {
+        error: isQuota
+          ? "The AI is temporarily unavailable due to usage limits. Please wait 1–2 minutes and try again."
+          : (message || "Failed to generate content. Please try again."),
+      },
+      { status: isQuota ? 429 : 500 }
     );
   }
 }

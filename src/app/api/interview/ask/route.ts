@@ -213,9 +213,18 @@ Based on everything they've told you so far, ask the single most useful follow-u
     });
   } catch (error) {
     console.error("[/api/interview/ask] Error:", error);
+
+    // Give the student a specific, helpful message when quota is exhausted
+    const message = error instanceof Error ? error.message : "";
+    const isQuota = message.includes("429") || message.includes("quota") || message.includes("RESOURCE_EXHAUSTED");
+
     return NextResponse.json(
-      { error: "Failed to generate question. Please try again." },
-      { status: 500 }
+      {
+        error: isQuota
+          ? "The AI is temporarily unavailable due to usage limits. Please wait 1–2 minutes and try again. Your answers are saved."
+          : "Failed to generate question. Please try again.",
+      },
+      { status: isQuota ? 429 : 500 }
     );
   }
 }
