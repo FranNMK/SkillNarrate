@@ -1,0 +1,263 @@
+"use client";
+/*
+ * src/components/features/PrivateOutputCard.tsx
+ *
+ * A self-contained card for generating one of the three "private" extra
+ * outputs on the generate page (linkedin_post, pitch_script, interview_answer
+ * when the project's primary type is case_study, etc.).
+ *
+ * PRIVATE = never shown on the public portfolio. There is no "Add to Portfolio"
+ * button here by design. The student can generate, read, copy — that's it.
+ *
+ * The card is lazy: it starts collapsed and only calls the API when the student
+ * clicks "Generate". This avoids burning API tokens on outputs they don't want.
+ */
+
+import { useState } from "react";
+import type { OutputType } from "@/types/database";
+
+interface PrivateOutputCardProps {
+  projectId: string;
+  outputType: OutputType;
+  /** Pre-loaded content if this output was previously generated */
+  existingContent?: string | null;
+}
+
+const OUTPUT_META: Record<OutputType, { label: string; icon: string; description: string }> = {
+  linkedin_post: {
+    label: "LinkedIn Post",
+    icon: "💼",
+    description: "A short, engaging post to share on LinkedIn — great for getting noticed by recruiters.",
+  },
+  pitch_script: {
+    label: "Pitch Script",
+    icon: "🎤",
+    description: "A 60–90 second spoken pitch for hackathons, demo days, or interviews.",
+  },
+  interview_answer: {
+    label: "Interview Answer",
+    icon: "🎯",
+    description: "A polished STAR-format answer ready to use in a technical job interview.",
+  },
+  case_study: {
+    label: "Case Study",
+    icon: "📄",
+    description: "A structured professional case study for your portfolio.",
+  },
+};
+
+/** Converts markdown-ish Gemini output to simple JSX (shared logic with OutputGenerator) */
+function FormattedContent({ text }: { text: string }) {
+  const lines = text.split("\n");
+  return (
+    <div className="space-y-2 text-sm leading-relaxed text-gray-800">
+      {lines.map((line, i) => {
+        if (line.startsWith("## ")) {
+          return (
+            <h3 key={i} className="text-sm font-bold mt-4 mb-1 pt-3 border-t border-gray-100 first:border-t-0 first:pt-0 first:mt-0"
+              style={{ color: "var(--color-brand-text)" }}>
+              {line.slice(3)}
+            </h3>
+          );
+        }
+        if (line.startsWith("**") && line.endsWith("**")) {
+          return <p key={i} className="font-semibold text-gray-900">{line.slice(2, -2)}</p>;
+        }
+        if (line.trim() === "") return <div key={i} className="h-1" />;
+        const parts = line.split(/(\*\*[^*]+\*\*)/g);
+        return (
+          <p key={i}>
+            {parts.map((part, j) =>
+              part.startsWith("**") && part.endsWith("**")
+                ? <strong key={j}>{part.slice(2, -2)}</strong>
+                : part
+            )}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+export default function PrivateOutputCard({
+  projectId,
+  outputType,
+  existingContent,
+}: PrivateOutputCardProps) {
+  const meta = OUTPUT_META[outputType];
+
+  // Start expanded if we already have content for this type
+  const [expanded, setExpanded]       = useState(!!existingContent);
+  const [content, setContent]         = useState(existingContent ?? "");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError]             = useState<string | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [toneInput, setToneInput]     = useState("");
+  const [showTone, setShowTone]       = useState(false);
+
+  const hasContent = content.length > 0;
+
+  const handleGenerate = async (tone?: string) => {
+    setIsGenerating(true);
+    setError(null);
+    setCopySuccess(false);
+
+    try {
+      const res = await fetch("/api/outputs/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId,
+          outputType,           // tell the API which type we want
+          toneInstruction: tone?.trim() || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to generate");
+
+      setContent(data.content);
+      setToneInput("");
+      setShowTone(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = content;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 2500);
+  };
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      {/* ── Collapsed header — always visible ── */}
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full px-6 py-4 flex items-center justify-between gap-4 hover:bg-gray-50 transition-colors text-left"
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-xl">{meta.icon}</span>
+          <div>
+            <p className="text-sm font-semibold text-gray-900">{meta.label}</p>
+            <p className="text-xs text-gray-400">{meta.description}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {hasContent && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">
+              Generated
+            </span>
+          )}
+          {/* chevron */}
+          <svg
+            width="16" height="16" viewBox="0 0 16 16" fill="none"
+            className={`text-gray-400 transition-transform ${expanded ? "rotate-180" : ""}`}
+          >
+            <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      </button>
+
+      {/* ── Expanded body ── */}
+      {expanded && (
+        <div className="border-t border-gray-100">
+          {/* Error banner */}
+          {error && (
+            <div className="mx-6 mt-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Content area */}
+          <div className="px-6 py-5">
+            {isGenerating ? (
+              <div className="text-center py-10">
+                <div className="inline-flex gap-1.5 mb-3">
+                  {[0, 150, 300].map((d) => (
+                    <div key={d} className="w-2 h-2 rounded-full animate-bounce"
+                      style={{ backgroundColor: "var(--color-brand-primary)", animationDelay: `${d}ms` }} />
+                  ))}
+                </div>
+                <p className="text-sm text-gray-500">Generating your {meta.label}…</p>
+              </div>
+            ) : hasContent ? (
+              <FormattedContent text={content} />
+            ) : (
+              <div className="text-center py-10">
+                <p className="text-sm text-gray-500 mb-4">
+                  Click below to generate your {meta.label} using your interview answers.
+                </p>
+                <button
+                  onClick={() => handleGenerate()}
+                  className="px-5 py-2.5 rounded-xl text-white font-semibold text-sm hover:opacity-90 transition-opacity"
+                  style={{ backgroundColor: "var(--color-brand-primary)" }}
+                >
+                  ✨ Generate {meta.label}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Action bar — only when content exists */}
+          {hasContent && !isGenerating && (
+            <div className="px-6 py-3 bg-gray-50 border-t border-gray-100 flex items-center gap-2 flex-wrap">
+              <button
+                onClick={handleCopy}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                {copySuccess ? "✓ Copied!" : "📋 Copy"}
+              </button>
+              <button
+                onClick={() => setShowTone((v) => !v)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                🔄 Regenerate
+              </button>
+              {/* Note: no "Add to Portfolio" — private outputs are never published */}
+              <span className="ml-auto text-xs text-gray-400 italic">Private — not shown on portfolio</span>
+            </div>
+          )}
+
+          {/* Tone adjustment */}
+          {showTone && (
+            <div className="px-6 pb-5 pt-3 border-t border-gray-100">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={toneInput}
+                  onChange={(e) => setToneInput(e.target.value)}
+                  placeholder="e.g. make it more concise"
+                  onKeyDown={(e) => { if (e.key === "Enter") handleGenerate(toneInput); }}
+                  className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+                  style={{ "--tw-ring-color": "var(--color-brand-primary)" } as React.CSSProperties}
+                />
+                <button
+                  onClick={() => handleGenerate(toneInput)}
+                  disabled={isGenerating}
+                  className="px-4 py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 shrink-0"
+                  style={{ backgroundColor: "var(--color-brand-primary)" }}
+                >
+                  ✨ Go
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

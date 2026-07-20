@@ -13,6 +13,7 @@
  */
 
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { signOutAction } from "@/lib/actions/auth";
 
@@ -53,12 +54,21 @@ export default async function DashboardLayout({
       {/* ── Top nav ── */}
       <header className="h-14 bg-white border-b border-gray-200 flex items-center px-6 gap-4">
         {/* Brand */}
-        <Link
-          href="/dashboard"
-          className="font-bold text-lg shrink-0"
-          style={{ color: "var(--color-brand-primary)" }}
-        >
-          SkillNarrate
+        <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
+          <Image
+            src="/images/logo.png"
+            alt="SkillNarrate"
+            width={32}
+            height={32}
+            className="rounded-lg"
+            priority
+          />
+          <span
+            className="font-bold text-lg"
+            style={{ color: "var(--color-brand-primary)" }}
+          >
+            SkillNarrate
+          </span>
         </Link>
 
         {/* Nav links */}

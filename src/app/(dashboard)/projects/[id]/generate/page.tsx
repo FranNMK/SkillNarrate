@@ -17,6 +17,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import OutputGenerator from "@/components/features/OutputGenerator";
+import PrivateOutputCard from "@/components/features/PrivateOutputCard";
 import type { OutputType, InterviewQA } from "@/types/database";
 
 const OUTPUT_TYPE_LABELS: Record<OutputType, string> = {
@@ -78,21 +79,31 @@ export default async function GeneratePage({
     redirect(`/projects/${id}/interview`);
   }
 
-  // Fetch any existing output for this project+type (for pre-loading)
+  // Fetch ALL existing outputs for this project (primary + any private extras already generated)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: existingOutput } = await (supabase as any)
+  const { data: allOutputs } = await (supabase as any)
     .from("outputs")
-    .select("id, content, is_published")
+    .select("id, content, output_type, is_published")
     .eq("project_id", id)
-    .eq("user_id", user.id)
-    .eq("output_type", project.output_type)
-    .single();
+    .eq("user_id", user.id);
+
+  const outputsMap: Record<string, { id: string; content: string; isPublished: boolean }> = {};
+  for (const o of allOutputs ?? []) {
+    outputsMap[o.output_type] = { id: o.id, content: o.content, isPublished: o.is_published };
+  }
+
+  const primaryOutputType = project.output_type as OutputType;
+  const existingOutput = outputsMap[primaryOutputType] ?? null;
+
+  // The three private extra types are every output type that isn't the primary one
+  const ALL_OUTPUT_TYPES: OutputType[] = ["case_study", "linkedin_post", "pitch_script", "interview_answer"];
+  const privateOutputTypes = ALL_OUTPUT_TYPES.filter((t) => t !== primaryOutputType);
 
   const history: InterviewQA[] = Array.isArray(project.raw_interview_answers)
     ? project.raw_interview_answers
     : [];
 
-  const outputLabel = OUTPUT_TYPE_LABELS[project.output_type as OutputType] ?? project.output_type;
+  const outputLabel = OUTPUT_TYPE_LABELS[primaryOutputType] ?? project.output_type;
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -135,21 +146,35 @@ export default async function GeneratePage({
         </div>
       )}
 
-      {/* ── OutputGenerator client component ── */}
+      {/* ── Primary output (publishable) ── */}
       <OutputGenerator
         projectId={project.id}
         projectTitle={project.title}
-        outputType={project.output_type as OutputType}
-        existingOutput={
-          existingOutput
-            ? {
-                id: existingOutput.id,
-                content: existingOutput.content,
-                isPublished: existingOutput.is_published,
-              }
-            : null
-        }
+        outputType={primaryOutputType}
+        existingOutput={existingOutput}
       />
+
+      {/* ── Private extra outputs ── */}
+      <div className="mt-10">
+        <div className="mb-4">
+          <h2 className="text-base font-bold" style={{ color: "var(--color-brand-text)" }}>
+            More outputs from this interview
+          </h2>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Generate additional formats using the same interview answers. These are private — they won&apos;t appear on your public portfolio.
+          </p>
+        </div>
+        <div className="space-y-3">
+          {privateOutputTypes.map((type) => (
+            <PrivateOutputCard
+              key={type}
+              projectId={project.id}
+              outputType={type}
+              existingContent={outputsMap[type]?.content ?? null}
+            />
+          ))}
+        </div>
+      </div>
 
       {/* ── Interview summary (collapsible reference) ── */}
       <details className="mt-6 bg-white rounded-2xl border border-gray-200 overflow-hidden">

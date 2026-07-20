@@ -15,13 +15,30 @@
  * In Phase 1 we'll style this properly. For now it's just a passthrough.
  */
 
+import Link from "next/link";
+import Image from "next/image";
+
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
+      {/* Logo above the card */}
+      <Link href="/" className="flex items-center gap-2.5 mb-6">
+        <Image
+          src="/images/logo.png"
+          alt="SkillNarrate"
+          width={40}
+          height={40}
+          className="rounded-xl"
+          priority
+        />
+        <span className="font-bold text-lg" style={{ color: "var(--color-brand-text)" }}>
+          SkillNarrate
+        </span>
+      </Link>
       {children}
     </div>
   );

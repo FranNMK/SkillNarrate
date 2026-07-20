@@ -44,7 +44,8 @@ import type { OutputType, InterviewQA } from "@/types/database";
 // ── Request body shape ────────────────────────────────────────
 interface GenerateRequestBody {
   projectId: string;
-  toneInstruction?: string; // optional: "make it shorter", "more technical", etc.
+  toneInstruction?: string;  // optional: "make it shorter", "more technical", etc.
+  outputType?: OutputType;   // optional override — if omitted, uses project's primary type
 }
 
 // ── Format-specific synthesis prompts ────────────────────────
@@ -232,12 +233,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const outputType = project.output_type as OutputType;
+    // Step 4 — determine output type
+    // If the caller specifies an outputType override (for generating private extras),
+    // use that. Otherwise fall back to the project's primary output_type.
+    const outputType: OutputType = (body.outputType as OutputType) ?? (project.output_type as OutputType);
 
-    // Step 4 — build the synthesis prompt
+    // Step 5 (was 4) — build the synthesis prompt
     const prompt = buildSynthesisPrompt(outputType, project.title, qaHistory, toneInstruction);
 
-    // Step 5 — call Gemini
+    // Step 6 (was 5) — call Gemini/OpenRouter
     // We use a lower temperature (0.6) for generation than for interviews (0.8)
     // because we want consistent, structured output, not creative variation.
     const result = await generateText({
@@ -248,7 +252,7 @@ export async function POST(request: Request) {
 
     const generatedContent = result.text.trim();
 
-    // Step 6 — upsert to outputs table
+    // Step 7 (was 6) — upsert to outputs table
     // We use upsert with onConflict on (project_id, output_type) so that
     // regenerating updates the existing row rather than creating a new one.
     //

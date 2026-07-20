@@ -12,6 +12,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -31,13 +32,14 @@ export function Navbar() {
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* ── Brand ── */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
-          {/* Logomark: a teal square with a white "S" */}
-          <span
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-black"
-            style={{ backgroundColor: "var(--color-brand-primary)" }}
-          >
-            SN
-          </span>
+          <Image
+            src="/images/logo.png"
+            alt="SkillNarrate"
+            width={36}
+            height={36}
+            className="rounded-lg"
+            priority
+          />
           <span
             className="font-bold text-base tracking-tight"
             style={{ color: "var(--color-brand-text)" }}
