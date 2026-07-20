@@ -95,6 +95,7 @@ export default function DashboardMobileMenu({
               <img
                 src={avatarUrl}
                 alt={displayName}
+                referrerPolicy="no-referrer"
                 className="w-10 h-10 rounded-full object-cover border border-gray-200 shrink-0"
               />
             ) : (

@@ -151,6 +151,7 @@ export default async function PublicPortfolioPage({
             <img
               src={avatarUrl}
               alt={name}
+              referrerPolicy="no-referrer"
               className="w-20 h-20 rounded-full object-cover mb-5 shadow-lg border-4"
               style={{ borderColor: "rgba(255,255,255,0.3)" }}
             />
@@ -267,6 +268,7 @@ export default async function PublicPortfolioPage({
                           <img
                             src={proj.logo_url}
                             alt=""
+                            referrerPolicy="no-referrer"
                             className="w-9 h-9 rounded-lg object-cover shrink-0 border border-white/60"
                           />
                         ) : (

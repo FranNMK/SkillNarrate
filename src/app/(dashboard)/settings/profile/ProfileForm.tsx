@@ -117,6 +117,7 @@ export default function ProfileForm({ profile, institutions, email }: ProfileFor
             <img
               src={avatarUrl}
               alt="Profile photo"
+              referrerPolicy="no-referrer"
               className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
             />
           ) : (
@@ -141,7 +142,12 @@ export default function ProfileForm({ profile, institutions, email }: ProfileFor
               style={{ "--tw-ring-color": "var(--color-brand-primary)" } as React.CSSProperties}
             />
             <p className="text-xs text-gray-400 mt-1.5">
-              Paste a public image URL. Your photo appears on your portfolio.
+              Paste a direct image URL (ending in .jpg, .png, etc.).
+              Works best with{" "}
+              <a href="https://imgur.com/upload" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Imgur</a>
+              {" "}or{" "}
+              <a href="https://postimages.org" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">PostImages</a>.
+              For ImgBB links, use the <strong>Direct link</strong> (ending in .jpg), not the page URL.
             </p>
           </div>
         </div>

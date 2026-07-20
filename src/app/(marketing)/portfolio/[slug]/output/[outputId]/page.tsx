@@ -203,6 +203,7 @@ export default async function PublicOutputPage({
               <img
                 src={proj.logo_url}
                 alt=""
+                referrerPolicy="no-referrer"
                 className="w-10 h-10 rounded-lg object-cover border-2"
                 style={{ borderColor: "rgba(255,255,255,0.3)" }}
               />
@@ -248,6 +249,7 @@ export default async function PublicOutputPage({
               <img
                 src={avatarUrl}
                 alt={authorName}
+                referrerPolicy="no-referrer"
                 className="w-9 h-9 rounded-full object-cover border-2"
                 style={{ borderColor: "rgba(255,255,255,0.3)" }}
               />

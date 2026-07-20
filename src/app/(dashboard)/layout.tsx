@@ -97,6 +97,7 @@ export default async function DashboardLayout({
               <img
                 src={avatarUrl}
                 alt={displayName}
+                referrerPolicy="no-referrer"
                 className="w-8 h-8 rounded-full object-cover hover:opacity-80 transition-opacity border border-gray-200"
               />
             ) : (
@@ -125,6 +126,7 @@ export default async function DashboardLayout({
               <img
                 src={avatarUrl}
                 alt={displayName}
+                referrerPolicy="no-referrer"
                 className="w-8 h-8 rounded-full object-cover border border-gray-200"
               />
             ) : (
