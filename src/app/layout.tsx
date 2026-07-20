@@ -14,6 +14,7 @@
 
 import type { Metadata } from "next";
 import "./globals.css";
+import PageProgressBar from "@/components/ui/PageProgressBar";
 
 export const metadata: Metadata = {
   title: {
@@ -42,10 +43,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {/*
-         * We'll wrap children with a Supabase session provider in Phase 1.
-         * For now, we render children directly.
-         */}
+        <PageProgressBar />
         {children}
       </body>
     </html>

@@ -8,6 +8,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import WelcomePopup from "@/components/features/WelcomePopup";
 import type { OutputType } from "@/types/database";
 
 export const metadata = { title: "Dashboard — SkillNarrate" };
@@ -84,6 +85,9 @@ export default async function DashboardPage() {
 
   return (
     <div>
+      {/* ── First-login welcome popup (client component, once per session) ── */}
+      <WelcomePopup firstName={firstName} />
+
       {/* ── Welcome header ── */}
       <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
         <div>

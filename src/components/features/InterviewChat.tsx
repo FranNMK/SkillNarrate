@@ -36,6 +36,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type { OutputType, InterviewQA } from "@/types/database";
+import Spinner from "@/components/ui/Spinner";
 
 // ── Types ────────────────────────────────────────────────────
 interface InterviewChatProps {
@@ -341,11 +342,12 @@ export default function InterviewChat({
           <button
             onClick={handleSendAnswer}
             disabled={isLoading || !currentAnswer.trim() || !pendingQuestion}
-            className="px-4 py-3 rounded-xl text-white font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            className="px-4 py-3 rounded-xl text-white font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed shrink-0 flex items-center gap-2"
             style={{ backgroundColor: "var(--color-brand-primary)" }}
             aria-label="Send answer"
           >
-            Send →
+            {isLoading ? <Spinner size={14} color="#fff" /> : null}
+            {isLoading ? "Thinking…" : "Send →"}
           </button>
         </div>
 
@@ -414,12 +416,13 @@ function EndInterviewButton({
       <button
         onClick={handleEnd}
         disabled={isEnding}
-        className="px-5 py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-5 py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         style={{
           backgroundColor: "var(--color-brand-secondary)",
           color: "#1f2937",
         }}
       >
+        {isEnding && <Spinner size={14} color="#1f2937" />}
         {isEnding ? "Saving…" : "Generate My Content →"}
       </button>
       {endError && (

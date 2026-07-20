@@ -15,7 +15,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
-import { signOutAction } from "@/lib/actions/auth";
+import SignOutButton from "@/components/features/SignOutButton";
 
 export default async function DashboardLayout({
   children,
@@ -112,15 +112,8 @@ export default async function DashboardLayout({
             {displayName}
           </span>
 
-          {/* Sign out */}
-          <form action={signOutAction}>
-            <button
-              type="submit"
-              className="text-xs text-gray-500 hover:text-gray-800 transition-colors px-2 py-1 rounded hover:bg-gray-100"
-            >
-              Sign out
-            </button>
-          </form>
+          {/* Sign out — confirm dialog handled in client component */}
+          <SignOutButton />
         </div>
       </header>
 

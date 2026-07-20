@@ -25,6 +25,7 @@
 import { useState } from "react";
 import { publishOutputAction, unpublishOutputAction } from "@/lib/actions/outputs";
 import type { OutputType } from "@/types/database";
+import Spinner from "@/components/ui/Spinner";
 
 // ── Props ─────────────────────────────────────────────────────
 interface OutputGeneratorProps {
@@ -227,7 +228,7 @@ export default function OutputGenerator({
               </p>
               <button
                 onClick={() => handleGenerate()}
-                className="px-6 py-3 rounded-xl text-white font-semibold text-sm transition-opacity hover:opacity-90"
+                className="px-6 py-3 rounded-xl text-white font-semibold text-sm transition-opacity hover:opacity-90 flex items-center gap-2"
                 style={{ backgroundColor: "var(--color-brand-primary)" }}
               >
                 ✨ Generate {outputLabel}
@@ -340,10 +341,11 @@ export default function OutputGenerator({
             <button
               onClick={() => handleGenerate(toneInstruction)}
               disabled={isGenerating}
-              className="px-4 py-2.5 rounded-xl text-white text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50 shrink-0"
+              className="px-4 py-2.5 rounded-xl text-white text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50 shrink-0 flex items-center gap-2"
               style={{ backgroundColor: "var(--color-brand-primary)" }}
             >
-              ✨ Regenerate
+              {isGenerating && <Spinner size={13} color="#fff" />}
+              {isGenerating ? "Working…" : "✨ Regenerate"}
             </button>
           </div>
 
@@ -377,7 +379,7 @@ export default function OutputGenerator({
           <button
             onClick={() => handleGenerate()}
             disabled={isGenerating}
-            className="px-8 py-3 rounded-xl text-white font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="px-8 py-3 rounded-xl text-white font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-50 flex items-center gap-2 mx-auto"
             style={{ backgroundColor: "var(--color-brand-primary)" }}
           >
             ✨ Generate {outputLabel}

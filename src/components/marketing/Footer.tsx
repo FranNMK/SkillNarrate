@@ -6,6 +6,7 @@
  */
 
 import Link from "next/link";
+import Image from "next/image";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -16,18 +17,19 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
           {/* ── Brand column ── */}
           <div>
-            <div className="flex items-center gap-2.5 mb-3">
-              <span
-                className="w-7 h-7 rounded-md flex items-center justify-center text-white text-xs font-black"
-                style={{ backgroundColor: "var(--color-brand-primary)" }}
-              >
-                SN
-              </span>
+            <Link href="/" className="inline-flex items-center gap-2.5 mb-3">
+              <Image
+                src="/images/logo.png"
+                alt="SkillNarrate"
+                width={32}
+                height={32}
+                className="rounded-md"
+              />
               <span className="font-bold text-sm" style={{ color: "var(--color-brand-text)" }}>
                 SkillNarrate
               </span>
-            </div>
-            <p className="text-sm text-gray-500 leading-relaxed max-w-xs">
+            </Link>
+            <p className="text-sm text-gray-500 leading-relaxed max-w-xs mt-0">
               Helping Kenya&apos;s TVET and technical students tell the story of
               what they built — clearly, confidently, and professionally.
             </p>

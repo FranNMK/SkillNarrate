@@ -18,6 +18,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signInAction, signInWithGoogleAction } from "@/lib/actions/auth";
+import Spinner from "@/components/ui/Spinner";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -131,9 +132,10 @@ function LoginForm() {
         <button
           type="submit"
           disabled={pending || googlePending}
-          className="w-full py-2.5 rounded-lg text-white font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="w-full py-2.5 rounded-lg text-white font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
           style={{ backgroundColor: "var(--color-brand-primary)" }}
         >
+          {pending && <Spinner size={14} color="#fff" />}
           {pending ? "Signing in…" : "Sign in"}
         </button>
       </form>
