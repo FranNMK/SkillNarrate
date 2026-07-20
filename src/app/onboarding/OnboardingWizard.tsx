@@ -3,26 +3,27 @@
  *
  * Client Component — the interactive 3-step onboarding wizard.
  *
- * WHY A SEPARATE FILE (not inline in page.tsx)?
- * page.tsx is a Server Component. You can't mix "use client" and
- * server-only code (like direct DB calls) in the same file.
- * The pattern is: Server Component page → passes data → Client Component UI.
- * This file handles all the step navigation, form state, and submission.
+ * ARCHITECTURE (v2 — step-isolated design):
+ * -----------------------------------------
+ * The previous single-<form> design caused a recurring bug: any
+ * keystroke that triggered a native form submit (Enter in a number
+ * input, autocomplete selection, mobile keyboard "Done" button) would
+ * fire the server action with whatever hidden-input values were in the
+ * DOM at that moment — often empty, producing "Please enter your course"
+ * errors and a jarring page refresh.
  *
- * ── HOW THE STEPS WORK ───────────────────────────────────────
- * We use a single <form> that spans all 3 steps. All inputs are
- * always present in the DOM (so the form data is complete when submitted),
- * but only the current step's inputs are VISIBLE (via conditional rendering).
+ * The fix: there is NO shared <form> wrapping all steps.
  *
- * This means:
- *  - User can go back to step 1 without losing what they typed in step 2
- *  - The final submit sends all 3 steps' data in one FormData object
- *  - We don't need to manage any state outside of currentStep + form values
+ *  - Steps 1 and 2 use plain <div>s with controlled inputs and
+ *    type="button" Next buttons. No form, no submit event possible.
+ *  - Step 3 has a small <form> whose action IS the server action. It
+ *    contains only the step-3 inputs (displayed) plus hidden inputs for
+ *    the values collected in steps 1 and 2. The submit button on step 3
+ *    is the only element that can fire the action.
+ *  - All Enter-key presses on visible inputs are blocked with onKeyDown.
  *
- * ── THE SUBMIT ───────────────────────────────────────────────
- * On the last step, form.action = completeOnboardingAction (Server Action).
- * The Server Action validates, saves to DB, sets flag, sends welcome email,
- * and redirects to /dashboard. Done.
+ * This makes accidental submission structurally impossible on steps 1/2,
+ * and tightly controlled on step 3.
  */
 
 "use client";
@@ -46,10 +47,10 @@ function StepIndicator({ current, total }: { current: number; total: number }) {
             borderRadius: "9999px",
             backgroundColor:
               i + 1 < current
-                ? "var(--color-brand-primary)"   // completed — solid teal
+                ? "var(--color-brand-primary)"    // completed — solid teal
                 : i + 1 === current
-                ? "var(--color-brand-secondary)" // active — amber
-                : "#D1D5DB",                     // upcoming — grey
+                ? "var(--color-brand-secondary)"  // active — amber
+                : "#D1D5DB",                      // upcoming — grey
           }}
         />
       ))}
@@ -58,7 +59,6 @@ function StepIndicator({ current, total }: { current: number; total: number }) {
 }
 
 // ── Institution search/select ────────────────────────────────
-// A filtered dropdown — user types to search, selects from list.
 function InstitutionSelect({
   institutions,
   value,
@@ -66,30 +66,25 @@ function InstitutionSelect({
 }: {
   institutions: Institution[];
   value: string;
-  onChange: (id: string, name: string) => void;
+  onChange: (id: string) => void;
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
 
-  // Filter institutions by name, town, or county
-  const filtered = query.length < 2
-    ? institutions
-    : institutions.filter(
-        (inst) =>
-          inst.name.toLowerCase().includes(query.toLowerCase()) ||
-          inst.nearest_town.toLowerCase().includes(query.toLowerCase()) ||
-          inst.county.toLowerCase().includes(query.toLowerCase())
-      );
+  const filtered =
+    query.length < 2
+      ? institutions
+      : institutions.filter(
+          (inst) =>
+            inst.name.toLowerCase().includes(query.toLowerCase()) ||
+            inst.nearest_town.toLowerCase().includes(query.toLowerCase()) ||
+            inst.county.toLowerCase().includes(query.toLowerCase())
+        );
 
-  // Find the currently selected institution name for display
   const selectedName = institutions.find((i) => String(i.id) === value)?.name;
 
   return (
     <div className="relative">
-      {/* Hidden input that actually holds the value for form submission */}
-      <input type="hidden" name="institution_id" value={value} />
-
-      {/* Search box */}
       <input
         type="text"
         placeholder={selectedName || "Search by institution name, town, or county…"}
@@ -100,15 +95,15 @@ function InstitutionSelect({
         }}
         onChange={(e) => setQuery(e.target.value)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+        // Prevent Enter from doing anything unexpected
+        onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
+        className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+        style={{ "--tw-ring-color": "var(--color-brand-primary)" } as React.CSSProperties}
         autoComplete="off"
       />
 
-      {/* Dropdown list */}
       {open && (
-        <div
-          className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
-        >
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
           {filtered.length === 0 ? (
             <p className="px-4 py-3 text-sm text-gray-400">No institutions found</p>
           ) : (
@@ -118,7 +113,7 @@ function InstitutionSelect({
                 type="button"
                 className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-50 last:border-0"
                 onMouseDown={() => {
-                  onChange(String(inst.id), inst.name);
+                  onChange(String(inst.id));
                   setOpen(false);
                   setQuery("");
                 }}
@@ -136,7 +131,12 @@ function InstitutionSelect({
   );
 }
 
-// ── Main wizard ─────────────────────────────────────────────
+// ── Inline validation message ────────────────────────────────
+function FieldError({ msg }: { msg: string }) {
+  return <p className="text-xs text-red-600 mt-1.5">{msg}</p>;
+}
+
+// ── Main wizard ──────────────────────────────────────────────
 function WizardInner({
   institutions,
   prefillName,
@@ -144,18 +144,25 @@ function WizardInner({
   institutions: Institution[];
   prefillName: string;
 }) {
-  const searchParams = useSearchParams();
-  const errorParam = searchParams.get("error");
-  const stepParam = searchParams.get("step");
+  const searchParams  = useSearchParams();
+  const serverError   = searchParams.get("error");
 
-  const [currentStep, setCurrentStep] = useState(
-    stepParam ? parseInt(stepParam, 10) : 1
-  );
-  const [pending, setPending] = useState(false);
-  const [institutionId, setInstitutionId] = useState("");
-  const [fullName, setFullName] = useState(prefillName);
-  const [courseField, setCourseField] = useState("");
-  const [graduationYear, setGraduationYear] = useState("");
+  const [currentStep,     setCurrentStep]     = useState(1);
+  const [pending,         setPending]         = useState(false);
+
+  // Step 1
+  const [fullName,        setFullName]        = useState(prefillName);
+  const [nameError,       setNameError]       = useState("");
+
+  // Step 2
+  const [institutionId,   setInstitutionId]   = useState("");
+  const [instError,       setInstError]       = useState("");
+
+  // Step 3
+  const [courseField,     setCourseField]     = useState("");
+  const [courseError,     setCourseError]     = useState("");
+  const [graduationYear,  setGraduationYear]  = useState("");
+
   const formRef = useRef<HTMLFormElement>(null);
 
   const TOTAL_STEPS = 3;
@@ -165,17 +172,28 @@ function WizardInner({
     "Where do you study?",
     "What are you studying?",
   ];
-
   const stepSubtitles = [
     "This is how you'll appear on your portfolio.",
     "Select your TVET institution from the list.",
     "Tell us your course so we can tailor the AI interview questions.",
   ];
 
+  // ── Step navigation ──────────────────────────────────────
   function goNext() {
-    // Validate current step before advancing
-    if (currentStep === 1 && !fullName.trim()) return;
-    if (currentStep === 2 && !institutionId) return;
+    if (currentStep === 1) {
+      if (!fullName.trim()) {
+        setNameError("Please enter your full name.");
+        return;
+      }
+      setNameError("");
+    }
+    if (currentStep === 2) {
+      if (!institutionId) {
+        setInstError("Please select your institution from the list.");
+        return;
+      }
+      setInstError("");
+    }
     setCurrentStep((s) => Math.min(s + 1, TOTAL_STEPS));
   }
 
@@ -183,11 +201,24 @@ function WizardInner({
     setCurrentStep((s) => Math.max(s - 1, 1));
   }
 
+  // ── Final submit handler ─────────────────────────────────
+  // Only called from step 3's form onSubmit.
+  function handleFinalSubmit(e: React.FormEvent<HTMLFormElement>) {
+    if (!courseField.trim()) {
+      e.preventDefault();
+      setCourseError("Please enter your course or field of study.");
+      document.getElementById("course_field_input")?.focus();
+      return;
+    }
+    setCourseError("");
+    setPending(true);
+    // Let the form submit naturally to the server action
+  }
+
   return (
     <div className="w-full max-w-md">
       {/* ── Card ── */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-        {/* Progress dots */}
         <StepIndicator current={currentStep} total={TOTAL_STEPS} />
 
         {/* Step header */}
@@ -206,173 +237,180 @@ function WizardInner({
           </p>
         </div>
 
-        {/* Error banner (from redirect query param) */}
-        {errorParam && (
+        {/* Server error banner (from any prior server-action redirect) */}
+        {serverError && currentStep === 3 && (
           <div className="mb-5 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
-            {errorParam}
+            {serverError}
           </div>
         )}
 
-        {/*
-         * SINGLE FORM — all inputs always mounted.
-         * Only current step's inputs are visible.
-         * This means FormData is always complete on submit.
-         *
-         * IMPORTANT: We intercept Enter key on all visible inputs to prevent
-         * accidental form submission (only the explicit "Finish" button submits).
-         */}
-        <form
-          ref={formRef}
-          action={completeOnboardingAction}
-          onSubmit={(e) => {
-            // Intercept submit on non-final steps (e.g. Enter key in an input)
-            if (currentStep < TOTAL_STEPS) {
-              e.preventDefault();
-              goNext();
-              return;
-            }
-            // Client-side validation before sending to server action
-            if (!fullName.trim()) {
-              e.preventDefault();
-              setCurrentStep(1);
-              return;
-            }
-            if (!institutionId) {
-              e.preventDefault();
-              setCurrentStep(2);
-              return;
-            }
-            if (!courseField.trim()) {
-              e.preventDefault();
-              // Stay on step 3 and focus the input
-              document.getElementById("course_field_display")?.focus();
-              return;
-            }
-            setPending(true);
-          }}
-        >
-          {/* Hidden inputs carry the controlled values to the server action */}
-          <input type="hidden" name="full_name" value={fullName} />
-          <input type="hidden" name="course_field" value={courseField} />
-          <input type="hidden" name="graduation_year" value={graduationYear} />
-
-          {/* ── STEP 1: Full name ─────────────────────────── */}
-          <div className={currentStep === 1 ? "block" : "hidden"}>
+        {/* ────────────────────────────────────────────────────────
+         *  STEP 1 — Full name
+         *  Plain <div>, NOT a <form>. No submit event possible.
+         * ─────────────────────────────────────────────────────── */}
+        {currentStep === 1 && (
+          <div>
             <label
-              className="block text-sm font-medium text-gray-700 mb-1"
-              htmlFor="full_name_display"
+              className="block text-sm font-medium text-gray-700 mb-1.5"
+              htmlFor="full_name_input"
             >
               Full name
             </label>
             <input
-              id="full_name_display"
+              id="full_name_input"
               type="text"
               autoComplete="name"
+              autoFocus
               value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+              onChange={(e) => { setFullName(e.target.value); setNameError(""); }}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); goNext(); } }}
               placeholder="e.g. Frank Mwangi"
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+              style={{ "--tw-ring-color": "var(--color-brand-primary)" } as React.CSSProperties}
             />
+            {nameError && <FieldError msg={nameError} />}
           </div>
+        )}
 
-          {/* ── STEP 2: Institution ────────────────────────── */}
-          <div className={currentStep === 2 ? "block" : "hidden"}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+        {/* ────────────────────────────────────────────────────────
+         *  STEP 2 — Institution
+         *  Plain <div>. Dropdown uses onMouseDown so blur fires first.
+         * ─────────────────────────────────────────────────────── */}
+        {currentStep === 2 && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
               Institution
             </label>
             <InstitutionSelect
               institutions={institutions}
               value={institutionId}
-              onChange={(id) => setInstitutionId(id)}
+              onChange={(id) => { setInstitutionId(id); setInstError(""); }}
             />
+            {instError && <FieldError msg={instError} />}
             <p className="text-xs text-gray-400 mt-2">
-              Can&apos;t find your institution? Type its name or nearest town.
+              Can&apos;t find yours? Type its name, town, or county.
             </p>
           </div>
+        )}
 
-          {/* ── STEP 3: Course + graduation year ─────────── */}
-          <div className={currentStep === 3 ? "block space-y-4" : "hidden"}>
+        {/* ────────────────────────────────────────────────────────
+         *  STEP 3 — Course + graduation year
+         *  This is the ONLY <form> in the wizard. It submits to the
+         *  server action. Hidden inputs carry values from steps 1 & 2.
+         *  All Enter keys are blocked on the visible inputs so the
+         *  only way to submit is the explicit "Finish setup" button.
+         * ─────────────────────────────────────────────────────── */}
+        {currentStep === 3 && (
+          <form
+            ref={formRef}
+            action={completeOnboardingAction}
+            onSubmit={handleFinalSubmit}
+            className="space-y-4"
+          >
+            {/* Carry step 1 + 2 values as hidden inputs */}
+            <input type="hidden" name="full_name"       value={fullName} />
+            <input type="hidden" name="institution_id"  value={institutionId} />
+            <input type="hidden" name="course_field"    value={courseField} />
+            <input type="hidden" name="graduation_year" value={graduationYear} />
+
             <div>
               <label
-                className="block text-sm font-medium text-gray-700 mb-1"
-                htmlFor="course_field_display"
+                className="block text-sm font-medium text-gray-700 mb-1.5"
+                htmlFor="course_field_input"
               >
                 Course / field of study
               </label>
               <input
-                id="course_field_display"
+                id="course_field_input"
                 type="text"
+                autoFocus
                 value={courseField}
-                onChange={(e) => setCourseField(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
+                onChange={(e) => { setCourseField(e.target.value); setCourseError(""); }}
+                onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
                 placeholder="e.g. Electrical Engineering, ICT, Fashion Design"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{ "--tw-ring-color": "var(--color-brand-primary)" } as React.CSSProperties}
               />
+              {courseError && <FieldError msg={courseError} />}
             </div>
 
             <div>
               <label
-                className="block text-sm font-medium text-gray-700 mb-1"
-                htmlFor="graduation_year_display"
+                className="block text-sm font-medium text-gray-700 mb-1.5"
+                htmlFor="graduation_year_input"
               >
                 Expected graduation year{" "}
                 <span className="font-normal text-gray-400">(optional)</span>
               </label>
               <input
-                id="graduation_year_display"
+                id="graduation_year_input"
                 type="number"
                 min={2024}
                 max={2035}
                 value={graduationYear}
                 onChange={(e) => setGraduationYear(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
+                onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
                 placeholder={String(new Date().getFullYear() + 1)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{ "--tw-ring-color": "var(--color-brand-primary)" } as React.CSSProperties}
               />
             </div>
-          </div>
 
-          {/* ── Navigation buttons ─────────────────────────── */}
+            {/* Navigation inside the form */}
+            <div className="flex items-center justify-between pt-4">
+              <button
+                type="button"
+                onClick={goBack}
+                className="text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                ← Back
+              </button>
+              <button
+                type="submit"
+                disabled={pending}
+                className="px-6 py-2.5 rounded-xl text-white font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-60 flex items-center gap-2"
+                style={{ backgroundColor: "var(--color-brand-primary)" }}
+              >
+                {pending ? (
+                  <>
+                    <span className="inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  "Finish setup →"
+                )}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* ── Navigation buttons for steps 1 and 2 (outside any form) ── */}
+        {currentStep < TOTAL_STEPS && (
           <div className="flex items-center justify-between mt-8">
-            {/* Back button — only shown on steps 2 and 3 */}
             {currentStep > 1 ? (
               <button
                 type="button"
                 onClick={goBack}
-                className="text-sm font-medium text-gray-500 hover:text-gray-700"
+                className="text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
               >
                 ← Back
               </button>
             ) : (
               <span />
             )}
-
-            {/* Next / Finish button */}
-            {currentStep < TOTAL_STEPS ? (
-              <button
-                type="button"
-                onClick={goNext}
-                className="px-6 py-2.5 rounded-lg text-white font-semibold text-sm transition-opacity hover:opacity-90"
-                style={{ backgroundColor: "var(--color-brand-primary)" }}
-              >
-                Next →
-              </button>
-            ) : (
-              <button
-                type="submit"
-                disabled={pending}
-                className="px-6 py-2.5 rounded-lg text-white font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-60"
-                style={{ backgroundColor: "var(--color-brand-primary)" }}
-              >
-                {pending ? "Saving…" : "Finish setup →"}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={goNext}
+              className="px-6 py-2.5 rounded-xl text-white font-semibold text-sm transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "var(--color-brand-primary)" }}
+            >
+              Next →
+            </button>
           </div>
-        </form>
+        )}
       </div>
 
-      {/* Skip link — lets users bypass onboarding (sets flag too) */}
+      {/* Skip link */}
       <p className="text-center text-xs text-gray-400 mt-4">
         <a
           href="/dashboard"
