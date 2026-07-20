@@ -29,14 +29,16 @@ const GEMINI_BASE_URL =
 // Model fallback chain — we try each in order until one succeeds.
 // WHY A FALLBACK CHAIN?
 // Google's free tier quotas are per-model, not shared. If gemini-2.0-flash
-// exhausts its daily limit (15 RPM / 1500 RPD on free tier), gemini-1.5-flash
+// exhausts its daily limit (15 RPM / 1500 RPD on free tier), gemini-2.0-flash-lite
 // has its own separate quota. Trying both means a 429 on one model does NOT
 // break the whole app — we silently retry on the next model.
 //
-// gemini-2.0-flash   → fastest, most capable, try first
-// gemini-1.5-flash   → separate quota, reliable fallback
+// gemini-2.0-flash      → fastest, most capable, try first
+// gemini-2.0-flash-lite → lighter sibling with its own separate quota; confirmed
+//                          present on the key via the ListModels API (gemini-1.5-flash
+//                          is no longer available on v1beta and returns 404).
 export const DEFAULT_MODEL = "gemini-2.0-flash";
-const MODEL_FALLBACK_CHAIN = ["gemini-2.0-flash", "gemini-1.5-flash"];
+const MODEL_FALLBACK_CHAIN = ["gemini-2.0-flash", "gemini-2.0-flash-lite"];
 
 // ──────────────────────────────────────────────────────────
 // Types
@@ -134,16 +136,17 @@ export async function generateText(options: GenerateOptions): Promise<GenerateRe
     }
 
     // 429 = rate-limited / quota exhausted → try next model in chain
+    // 404 = model not found (wrong model id for this API version) → try next model in chain
     // Any other error (400, 403, 500) → don't bother retrying, throw immediately
     const errorBody = await response.text();
     lastError = new Error(`Gemini API error ${response.status} (${currentModel}): ${errorBody}`);
 
-    if (response.status !== 429) {
+    if (response.status !== 429 && response.status !== 404) {
       throw lastError;
     }
 
-    // Log the 429 and try the next model
-    console.warn(`[Gemini] ${currentModel} returned 429 (quota exhausted), trying next model…`);
+    // Log the transient error and try the next model
+    console.warn(`[Gemini] ${currentModel} returned ${response.status} (${response.status === 429 ? "quota exhausted" : "model not found"}), trying next model…`);
   }
 
   // All models exhausted

@@ -214,17 +214,28 @@ Based on everything they've told you so far, ask the single most useful follow-u
   } catch (error) {
     console.error("[/api/interview/ask] Error:", error);
 
-    // Give the student a specific, helpful message when quota is exhausted
     const message = error instanceof Error ? error.message : "";
-    const isQuota = message.includes("429") || message.includes("quota") || message.includes("RESOURCE_EXHAUSTED");
+    const isQuota =
+      message.includes("429") ||
+      message.includes("quota") ||
+      message.includes("RESOURCE_EXHAUSTED");
+    const isAllExhausted =
+      isQuota || message.includes("All Gemini models exhausted");
 
-    return NextResponse.json(
-      {
-        error: isQuota
-          ? "The AI is temporarily unavailable due to usage limits. Please wait 1–2 minutes and try again. Your answers are saved."
-          : "Failed to generate question. Please try again.",
-      },
-      { status: isQuota ? 429 : 500 }
-    );
+    // Map to a friendly, actionable message so the student never sees a raw 500.
+    let userMessage: string;
+    let status: number;
+
+    if (isAllExhausted) {
+      userMessage =
+        "The AI is temporarily unavailable due to usage limits. Please wait 1–2 minutes and try again — your answers are saved.";
+      status = 503;
+    } else {
+      userMessage =
+        "Something went wrong generating the next question. Please try again. If the problem persists, refresh the page.";
+      status = 500;
+    }
+
+    return NextResponse.json({ error: userMessage }, { status });
   }
 }
