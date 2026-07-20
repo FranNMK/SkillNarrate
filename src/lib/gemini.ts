@@ -1,44 +1,42 @@
 /*
  * src/lib/gemini.ts
  *
- * Google Gemini API helper
- * ─────────────────────────
+ * AI generation helper — powered by OpenRouter
+ * ─────────────────────────────────────────────
  * SERVER-ONLY. Never import this in a Client Component — it uses
- * GEMINI_API_KEY which must stay on the server.
+ * GEMINI_API_KEY (now an OpenRouter key) which must stay on the server.
  *
- * HOW GEMINI AUTH WORKS (much simpler than IBM IAM):
- * Unlike watsonx.ai which requires fetching a short-lived bearer token first,
- * Google Gemini uses a single long-lived API key passed as a query parameter
- * or in the Authorization header on every request. That's it — no token exchange.
+ * WHY OPENROUTER?
+ * The Google AI Studio free tier (native Gemini API) has a hard daily cap
+ * of 1,500 requests per project. OpenRouter proxies the same Gemini models
+ * through an OpenAI-compatible endpoint with per-token pricing and no daily
+ * hard cap, so the app never goes dark mid-session.
  *
- * API ENDPOINT PATTERN:
- *   POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={API_KEY}
+ * HOW OPENROUTER AUTH WORKS:
+ * Pass your key as a standard Bearer token in the Authorization header.
+ * The endpoint is OpenAI-compatible: POST /v1/chat/completions
+ * Model IDs use the format "provider/model-name" (e.g. "google/gemini-2.5-flash").
  *
- * We default to "gemini-2.0-flash" which is:
- *  - Fast (optimised for low latency)
- *  - Free tier available on Google AI Studio
- *  - Great for conversational tasks like our interview engine
+ * COST:
+ * google/gemini-2.5-flash      → $0.30 / 1M input tokens  (primary)
+ * google/gemini-2.5-flash-lite → $0.10 / 1M input tokens  (fallback)
+ * A full 7-question interview is ~2,000 tokens ≈ $0.0006 total.
  *
- * If gemini-2.0-flash isn't available on your key, fall back to "gemini-1.5-flash".
- * Both behave identically for our use case.
+ * API ENDPOINT:
+ *   POST https://openrouter.ai/api/v1/chat/completions
+ *   Authorization: Bearer <GEMINI_API_KEY>
  */
 
-const GEMINI_BASE_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models";
+const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-// Model fallback chain — we try each in order until one succeeds.
-// WHY A FALLBACK CHAIN?
-// Google's free tier quotas are per-model, not shared. If gemini-2.0-flash
-// exhausts its daily limit (15 RPM / 1500 RPD on free tier), gemini-2.0-flash-lite
-// has its own separate quota. Trying both means a 429 on one model does NOT
-// break the whole app — we silently retry on the next model.
+// Model fallback chain — try each in order until one succeeds.
+// If the primary is rate-limited (429) or unavailable (404), we fall back
+// to the lighter model which has its own separate rate limit bucket.
 //
-// gemini-2.0-flash      → fastest, most capable, try first
-// gemini-2.0-flash-lite → lighter sibling with its own separate quota; confirmed
-//                          present on the key via the ListModels API (gemini-1.5-flash
-//                          is no longer available on v1beta and returns 404).
-export const DEFAULT_MODEL = "gemini-2.0-flash";
-const MODEL_FALLBACK_CHAIN = ["gemini-2.0-flash", "gemini-2.0-flash-lite"];
+// google/gemini-2.5-flash      → best quality, try first
+// google/gemini-2.5-flash-lite → cheaper, reliable fallback
+export const DEFAULT_MODEL = "google/gemini-2.5-flash";
+const MODEL_FALLBACK_CHAIN = ["google/gemini-2.5-flash", "google/gemini-2.5-flash-lite"];
 
 // ──────────────────────────────────────────────────────────
 // Types
@@ -54,30 +52,46 @@ export interface GenerateOptions {
   prompt: string;
   /**
    * Optional prior conversation turns for multi-turn chat.
-   * Each item is a { role, parts } object following the Gemini API shape.
-   * We'll use this in Phase 3 for the conversational interview.
+   * Each item is a { role, parts } object in Gemini's shape — we convert
+   * to OpenAI's { role, content } shape internally before sending.
    */
   history?: GeminiMessage[];
-  /** Gemini model to use. Defaults to DEFAULT_MODEL. */
+  /** Model to use. Defaults to DEFAULT_MODEL. */
   model?: string;
   /**
-   * Max tokens to generate. Gemini calls these "maxOutputTokens".
-   * 1024 is plenty for a LinkedIn post or interview answer.
+   * Max tokens to generate. 1024 is plenty for interview questions.
    * Increase to 2048 for longer case studies.
    */
   maxOutputTokens?: number;
   /**
    * Temperature controls creativity vs. precision.
    * 0.0 = deterministic/factual, 1.0 = creative/varied.
-   * 0.7 is a good default for our use case.
    */
   temperature?: number;
 }
 
 export interface GenerateResult {
   text: string;
-  /** Finish reason from the API — "STOP" means normal completion */
+  /** Finish reason from the API — "stop" means normal completion */
   finishReason: string;
+}
+
+// ──────────────────────────────────────────────────────────
+// Internal helpers
+// ──────────────────────────────────────────────────────────
+
+// Convert our GeminiMessage format (role: "model") to OpenAI format (role: "assistant").
+// OpenRouter uses the OpenAI convention so "model" must become "assistant".
+function toOpenAIMessages(
+  history: GeminiMessage[],
+  prompt: string
+): { role: "user" | "assistant" | "system"; content: string }[] {
+  const messages = history.map((m) => ({
+    role: (m.role === "model" ? "assistant" : "user") as "user" | "assistant",
+    content: m.parts.map((p) => p.text).join(""),
+  }));
+  messages.push({ role: "user", content: prompt });
+  return messages;
 }
 
 // ──────────────────────────────────────────────────────────
@@ -88,7 +102,7 @@ export async function generateText(options: GenerateOptions): Promise<GenerateRe
   const {
     prompt,
     history = [],
-    model,                    // if caller specifies a model, use only that
+    model,
     maxOutputTokens = 1024,
     temperature = 0.7,
   } = options;
@@ -96,59 +110,56 @@ export async function generateText(options: GenerateOptions): Promise<GenerateRe
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY environment variable is not set");
 
-  // Build the contents array.
-  // Gemini's API represents conversation as an array of { role, parts } objects.
-  // We append the current user prompt at the end of any existing history.
-  const contents: GeminiMessage[] = [
-    ...history,
-    { role: "user", parts: [{ text: prompt }] },
-  ];
+  const messages = toOpenAIMessages(history, prompt);
 
-  // Decide which models to try.
   // If the caller specified a model explicitly, use only that (no fallback).
-  // Otherwise, walk the fallback chain until one succeeds.
+  // Otherwise walk the fallback chain until one succeeds.
   const modelsToTry = model ? [model] : MODEL_FALLBACK_CHAIN;
   let lastError: Error | null = null;
 
   for (const currentModel of modelsToTry) {
-    const url = `${GEMINI_BASE_URL}/${currentModel}:generateContent?key=${apiKey}`;
-
-    const response = await fetch(url, {
+    const response = await fetch(OPENROUTER_BASE_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+        // OpenRouter recommends these headers for attribution / rate-limit tiers
+        "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+        "X-Title": "SkillNarrate",
+      },
       body: JSON.stringify({
-        contents,
-        generationConfig: {
-          maxOutputTokens,
-          temperature,
-          candidateCount: 1,
-        },
+        model: currentModel,
+        messages,
+        max_tokens: maxOutputTokens,
+        temperature,
       }),
     });
 
     if (response.ok) {
       const data = await response.json();
-      // Gemini returns: data.candidates[0].content.parts[0].text
-      const candidate = data.candidates?.[0];
-      const text: string = candidate?.content?.parts?.[0]?.text ?? "";
-      const finishReason: string = candidate?.finishReason ?? "UNKNOWN";
+      const choice = data.choices?.[0];
+      const text: string = choice?.message?.content ?? "";
+      const finishReason: string = choice?.finish_reason ?? "UNKNOWN";
       return { text, finishReason };
     }
 
-    // 429 = rate-limited / quota exhausted → try next model in chain
-    // 404 = model not found (wrong model id for this API version) → try next model in chain
-    // Any other error (400, 403, 500) → don't bother retrying, throw immediately
+    // 429 = rate-limited → try next model in chain
+    // 404 = model not found → try next model in chain
+    // Any other error (400, 401, 500) → throw immediately, no point retrying
     const errorBody = await response.text();
-    lastError = new Error(`Gemini API error ${response.status} (${currentModel}): ${errorBody}`);
+    lastError = new Error(`OpenRouter API error ${response.status} (${currentModel}): ${errorBody}`);
 
     if (response.status !== 429 && response.status !== 404) {
       throw lastError;
     }
 
-    // Log the transient error and try the next model
-    console.warn(`[Gemini] ${currentModel} returned ${response.status} (${response.status === 429 ? "quota exhausted" : "model not found"}), trying next model…`);
+    console.warn(
+      `[OpenRouter] ${currentModel} returned ${response.status} (${
+        response.status === 429 ? "rate limited" : "model not found"
+      }), trying next model…`
+    );
   }
 
   // All models exhausted
-  throw lastError ?? new Error("All Gemini models exhausted or unavailable.");
+  throw lastError ?? new Error("All models exhausted or unavailable.");
 }
