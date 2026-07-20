@@ -18,6 +18,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import OutputGenerator from "@/components/features/OutputGenerator";
 import PrivateOutputCard from "@/components/features/PrivateOutputCard";
+import ProjectLinksEditor from "@/components/features/ProjectLinksEditor";
 import type { OutputType, InterviewQA } from "@/types/database";
 
 const OUTPUT_TYPE_LABELS: Record<OutputType, string> = {
@@ -50,10 +51,10 @@ export default async function GeneratePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; published?: string }>;
+  searchParams: Promise<{ error?: string; published?: string; linksSaved?: string }>;
 }) {
   const { id } = await params;
-  const { error, published } = await searchParams;
+  const { error, published, linksSaved } = await searchParams;
 
   const supabase = await createClient();
 
@@ -67,7 +68,7 @@ export default async function GeneratePage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: project, error: projectError } = await (supabase as any)
     .from("projects")
-    .select("id, title, output_type, raw_interview_answers, interview_completed")
+    .select("id, title, output_type, raw_interview_answers, interview_completed, logo_url, demo_video_url, demo_link, github_link")
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
@@ -121,14 +122,24 @@ export default async function GeneratePage({
       </nav>
 
       {/* ── Header ── */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-1" style={{ color: "var(--color-brand-text)" }}>
-          Your {outputLabel}
-        </h1>
-        <p className="text-sm text-gray-500">
-          Based on your {history.length}-question interview about{" "}
-          <span className="font-medium text-gray-700">{project.title}</span>.
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold mb-1" style={{ color: "var(--color-brand-text)" }}>
+            Your {outputLabel}
+          </h1>
+          <p className="text-sm text-gray-500">
+            Based on your {history.length}-question interview about{" "}
+            <span className="font-medium text-gray-700">{project.title}</span>.
+          </p>
+        </div>
+        {/* Continue Interview — allows adding more Q&As to improve outputs */}
+        <Link
+          href={`/projects/${project.id}/interview?continue=1`}
+          className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-colors"
+          style={{ borderColor: "var(--color-brand-primary)", color: "var(--color-brand-primary)" }}
+        >
+          🎙 Continue Interview
+        </Link>
       </div>
 
       {/* ── Error / success banners ── */}
@@ -143,6 +154,11 @@ export default async function GeneratePage({
           <Link href="/settings/portfolio" className="underline hover:no-underline">
             View your portfolio link →
           </Link>
+        </div>
+      )}
+      {linksSaved === "true" && (
+        <div className="mb-4 px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-sm">
+          ✅ Project details saved.
         </div>
       )}
 
@@ -175,6 +191,17 @@ export default async function GeneratePage({
           ))}
         </div>
       </div>
+
+      {/* ── Project links / media editor ── */}
+      <ProjectLinksEditor
+        projectId={project.id}
+        initial={{
+          logo_url: project.logo_url ?? null,
+          demo_video_url: project.demo_video_url ?? null,
+          demo_link: project.demo_link ?? null,
+          github_link: project.github_link ?? null,
+        }}
+      />
 
       {/* ── Interview summary (collapsible reference) ── */}
       <details className="mt-6 bg-white rounded-2xl border border-gray-200 overflow-hidden">

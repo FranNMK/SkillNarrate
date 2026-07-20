@@ -115,18 +115,15 @@ export default async function PublicPortfolioPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profile } = await (supabase as any)
     .from("profiles")
-    .select("full_name, course_field, graduation_year, institutions(name, county)")
+    .select("full_name, course_field, graduation_year, avatar_url, institutions(name, county)")
     .eq("id", userId)
     .single();
 
-  // Step 3 — fetch published outputs
-  // RLS policy "outputs_select_public_portfolio" allows this read because:
-  //   - is_published = TRUE (enforced by our .eq() filter)
-  //   - This user has an active portfolio_link (we verified above)
+  // Step 3 — fetch published outputs with project media fields
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: outputs } = await (supabase as any)
     .from("outputs")
-    .select("id, output_type, content, project_id, projects(title)")
+    .select("id, output_type, content, project_id, projects(title, logo_url, demo_link, demo_video_url, github_link)")
     .eq("user_id", userId)
     .eq("is_published", true)
     .order("created_at", { ascending: false });
@@ -136,6 +133,7 @@ export default async function PublicPortfolioPage({
   const course = profile?.course_field ?? null;
   const institution = (profile?.institutions as { name: string; county: string } | null) ?? null;
   const graduationYear = profile?.graduation_year ?? null;
+  const avatarUrl: string | null = profile?.avatar_url ?? null;
   const outputList = outputs ?? [];
 
   // ── Render ─────────────────────────────────────────────────
@@ -147,13 +145,23 @@ export default async function PublicPortfolioPage({
         className="py-16 px-6"
       >
         <div className="max-w-4xl mx-auto text-white">
-          {/* Avatar */}
-          <div
-            className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black mb-5 shadow-lg"
-            style={{ backgroundColor: "rgba(255,255,255,0.2)" }}
-          >
-            {firstName.charAt(0).toUpperCase()}
-          </div>
+          {/* Avatar — photo if set, otherwise initial */}
+          {avatarUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={avatarUrl}
+              alt={name}
+              className="w-20 h-20 rounded-full object-cover mb-5 shadow-lg border-4"
+              style={{ borderColor: "rgba(255,255,255,0.3)" }}
+            />
+          ) : (
+            <div
+              className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-black mb-5 shadow-lg"
+              style={{ backgroundColor: "rgba(255,255,255,0.2)" }}
+            >
+              {firstName.charAt(0).toUpperCase()}
+            </div>
+          )}
 
           <h1 className="text-3xl sm:text-4xl font-black mb-2 tracking-tight">
             {name}
@@ -222,49 +230,111 @@ export default async function PublicPortfolioPage({
                 output_type: OutputType;
                 content: string;
                 project_id: string;
-                projects: { title: string } | null;
+                projects: {
+                  title: string;
+                  logo_url: string | null;
+                  demo_link: string | null;
+                  demo_video_url: string | null;
+                  github_link: string | null;
+                } | null;
               }) => {
                 const config = OUTPUT_CONFIG[output.output_type] ?? {
                   label: output.output_type,
                   icon: "📝",
                   color: "#f3f4f6",
                 };
-                // Show a preview: first 200 characters of the content
                 const preview = output.content.slice(0, 200).trim();
                 const hasMore = output.content.length > 200;
+                const proj = output.projects;
 
                 return (
-                  <Link
+                  <div
                     key={output.id}
-                    href={`/portfolio/${slug}/output/${output.id}`}
-                    className="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:border-gray-300 hover:shadow-md transition-all"
+                    className="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:border-gray-300 hover:shadow-md transition-all flex flex-col"
                   >
                     {/* Card header */}
-                    <div
-                      className="px-5 py-4 flex items-center gap-3"
-                      style={{ backgroundColor: config.color }}
+                    <Link
+                      href={`/portfolio/${slug}/output/${output.id}`}
+                      className="block"
                     >
-                      <span className="text-xl">{config.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-gray-600">
-                          {config.label}
-                        </p>
-                        <p className="font-bold text-gray-900 text-sm truncate">
-                          {output.projects?.title ?? "Untitled Project"}
-                        </p>
+                      <div
+                        className="px-5 py-4 flex items-center gap-3"
+                        style={{ backgroundColor: config.color }}
+                      >
+                        {/* Project logo or type icon */}
+                        {proj?.logo_url ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={proj.logo_url}
+                            alt=""
+                            className="w-9 h-9 rounded-lg object-cover shrink-0 border border-white/60"
+                          />
+                        ) : (
+                          <span className="text-xl shrink-0">{config.icon}</span>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-600">
+                            {config.label}
+                          </p>
+                          <p className="font-bold text-gray-900 text-sm truncate">
+                            {proj?.title ?? "Untitled Project"}
+                          </p>
+                        </div>
+                        <span className="text-gray-400 text-sm group-hover:translate-x-0.5 transition-transform shrink-0">
+                          →
+                        </span>
                       </div>
-                      <span className="text-gray-400 text-sm group-hover:translate-x-0.5 transition-transform">
-                        →
-                      </span>
-                    </div>
+                    </Link>
 
                     {/* Content preview */}
-                    <div className="px-5 py-4">
-                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-4">
-                        {preview}{hasMore ? "…" : ""}
-                      </p>
-                    </div>
-                  </Link>
+                    <Link href={`/portfolio/${slug}/output/${output.id}`} className="block flex-1">
+                      <div className="px-5 py-4">
+                        <p className="text-xs text-gray-600 leading-relaxed line-clamp-4">
+                          {preview}{hasMore ? "…" : ""}
+                        </p>
+                      </div>
+                    </Link>
+
+                    {/* Optional links strip */}
+                    {(proj?.github_link || proj?.demo_link || proj?.demo_video_url) && (
+                      <div className="px-5 pb-4 pt-0 flex flex-wrap gap-2">
+                        {proj?.github_link && (
+                          <a
+                            href={proj.github_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58 0-.28-.01-1.03-.01-2.02-3.34.72-4.04-1.61-4.04-1.61-.55-1.38-1.33-1.75-1.33-1.75-1.09-.74.08-.73.08-.73 1.2.08 1.83 1.24 1.83 1.24 1.07 1.83 2.8 1.3 3.49 1 .11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 013-.4c1.02 0 2.04.14 3 .4 2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22 0 1.6-.01 2.9-.01 3.29 0 .32.21.7.82.58C20.56 21.8 24 17.3 24 12 24 5.37 18.63 0 12 0z"/></svg>
+                            GitHub
+                          </a>
+                        )}
+                        {proj?.demo_link && (
+                          <a
+                            href={proj.demo_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            🔗 Live Demo
+                          </a>
+                        )}
+                        {proj?.demo_video_url && (
+                          <a
+                            href={proj.demo_video_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            ▶ Demo Video
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>

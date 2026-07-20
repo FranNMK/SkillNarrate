@@ -48,10 +48,10 @@ export default async function InterviewPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; continue?: string }>;
 }) {
   const { id } = await params;
-  const { error } = await searchParams;
+  const { error, continue: continueParam } = await searchParams;
 
   const supabase = await createClient();
 
@@ -78,8 +78,9 @@ export default async function InterviewPage({
     redirect("/dashboard");
   }
 
-  // Step 3 — if interview is complete, go to generate
-  if (project.interview_completed) {
+  // Step 3 — if interview is complete, allow re-entry only if ?continue=1 is set,
+  // otherwise redirect to generate page
+  if (project.interview_completed && continueParam !== "1") {
     redirect(`/projects/${id}/generate`);
   }
 
@@ -112,10 +113,13 @@ export default async function InterviewPage({
         </div>
       )}
 
-      {/* ── Help text for resumed interviews ── */}
+      {/* ── Help text for resumed / continued interviews ── */}
       {initialHistory.length > 0 && (
         <div className="mb-4 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
-          Welcome back! You&apos;ve answered <strong>{initialHistory.length}</strong> question{initialHistory.length !== 1 ? "s" : ""} so far. Continue where you left off.
+          {project.interview_completed
+            ? <>You&apos;re adding more to a completed interview — <strong>{initialHistory.length}</strong> Q&amp;A{initialHistory.length !== 1 ? "s" : ""} already saved. Any new answers will improve your generated outputs.</>
+            : <>Welcome back! You&apos;ve answered <strong>{initialHistory.length}</strong> question{initialHistory.length !== 1 ? "s" : ""} so far. Continue where you left off.</>
+          }
         </div>
       )}
 

@@ -91,6 +91,12 @@ export default async function DashboardLayout({
           >
             Portfolio
           </Link>
+          <Link
+            href="/settings/profile"
+            className="px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+          >
+            Profile
+          </Link>
         </nav>
 
         {/* Spacer */}
@@ -98,19 +104,27 @@ export default async function DashboardLayout({
 
         {/* User section */}
         <div className="flex items-center gap-3">
-          {/* Avatar circle */}
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
-            style={{ backgroundColor: "var(--color-brand-primary)" }}
-            title={displayName}
+          {/* Avatar — links to profile settings */}
+          <Link
+            href="/settings/profile"
+            className="shrink-0"
+            title="Edit your profile"
           >
-            {avatarInitial}
-          </div>
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold hover:opacity-80 transition-opacity"
+              style={{ backgroundColor: "var(--color-brand-primary)" }}
+            >
+              {avatarInitial}
+            </div>
+          </Link>
 
-          {/* Display name — hidden on very small screens */}
-          <span className="hidden sm:block text-sm font-medium text-gray-700 max-w-[120px] truncate">
+          {/* Display name — links to profile settings, hidden on very small screens */}
+          <Link
+            href="/settings/profile"
+            className="hidden sm:block text-sm font-medium text-gray-700 max-w-[120px] truncate hover:text-gray-900 transition-colors"
+          >
             {displayName}
-          </span>
+          </Link>
 
           {/* Sign out — confirm dialog handled in client component */}
           <SignOutButton />

@@ -22,6 +22,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import type { OutputType } from "@/types/database";
+import PublicOutputActions from "@/components/features/PublicOutputActions";
 
 const OUTPUT_CONFIG: Record<OutputType, { label: string; icon: string }> = {
   case_study:       { label: "Case Study",       icon: "📄" },
@@ -144,13 +145,11 @@ export default async function PublicOutputPage({
 
   const userId = portfolioLink.user_id;
 
-  // Step 2 — fetch the specific output
-  // The double-check (user_id + is_published) ensures we only show
-  // published outputs belonging to this portfolio's owner.
+  // Step 2 — fetch the specific output (with project media fields)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: output } = await (supabase as any)
     .from("outputs")
-    .select("id, output_type, content, project_id, projects(title)")
+    .select("id, output_type, content, project_id, projects(title, logo_url, demo_link, demo_video_url, github_link)")
     .eq("id", outputId)
     .eq("user_id", userId)
     .eq("is_published", true)
@@ -158,19 +157,28 @@ export default async function PublicOutputPage({
 
   if (!output) notFound();
 
-  // Step 3 — fetch the student's profile for the "about the author" strip
+  // Step 3 — fetch the student's profile (with avatar and institution)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profile } = await (supabase as any)
     .from("profiles")
-    .select("full_name, course_field, institutions(name)")
+    .select("full_name, course_field, avatar_url, institutions(name)")
     .eq("id", userId)
     .single();
 
   const config = OUTPUT_CONFIG[output.output_type as OutputType] ?? { label: "Output", icon: "📝" };
-  const projectTitle = (output.projects as { title: string } | null)?.title ?? "Untitled Project";
-  const authorName = profile?.full_name ?? "SkillNarrate Student";
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const shareUrl = `${appUrl}/portfolio/${slug}/output/${outputId}`;
+  const proj = output.projects as {
+    title: string;
+    logo_url: string | null;
+    demo_link: string | null;
+    demo_video_url: string | null;
+    github_link: string | null;
+  } | null;
+  const projectTitle = proj?.title ?? "Untitled Project";
+  const authorName  = profile?.full_name ?? "SkillNarrate Student";
+  const avatarUrl: string | null = profile?.avatar_url ?? null;
+  const institutionName = (profile?.institutions as { name: string } | null)?.name ?? null;
+  const appUrl    = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const shareUrl  = `${appUrl}/portfolio/${slug}/output/${outputId}`;
 
   return (
     <div className="pt-16"> {/* offset for fixed navbar */}
@@ -188,9 +196,19 @@ export default async function PublicOutputPage({
             ← Back to {authorName.split(" ")[0]}&apos;s Portfolio
           </Link>
 
-          {/* Type badge */}
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-xl">{config.icon}</span>
+          {/* Type badge + project logo */}
+          <div className="flex items-center gap-3 mb-3">
+            {proj?.logo_url ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={proj.logo_url}
+                alt=""
+                className="w-10 h-10 rounded-lg object-cover border-2"
+                style={{ borderColor: "rgba(255,255,255,0.3)" }}
+              />
+            ) : (
+              <span className="text-xl">{config.icon}</span>
+            )}
             <span className="text-sm font-semibold opacity-80">{config.label}</span>
           </div>
 
@@ -198,19 +216,56 @@ export default async function PublicOutputPage({
             {projectTitle}
           </h1>
 
+          {/* Project links strip */}
+          {(proj?.github_link || proj?.demo_link || proj?.demo_video_url) && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {proj?.github_link && (
+                <a href={proj.github_link} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58 0-.28-.01-1.03-.01-2.02-3.34.72-4.04-1.61-4.04-1.61-.55-1.38-1.33-1.75-1.33-1.75-1.09-.74.08-.73.08-.73 1.2.08 1.83 1.24 1.83 1.24 1.07 1.83 2.8 1.3 3.49 1 .11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 013-.4c1.02 0 2.04.14 3 .4 2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22 0 1.6-.01 2.9-.01 3.29 0 .32.21.7.82.58C20.56 21.8 24 17.3 24 12 24 5.37 18.63 0 12 0z"/></svg>
+                  GitHub
+                </a>
+              )}
+              {proj?.demo_link && (
+                <a href={proj.demo_link} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                  🔗 Live Demo
+                </a>
+              )}
+              {proj?.demo_video_url && (
+                <a href={proj.demo_video_url} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                  ▶ Demo Video
+                </a>
+              )}
+            </div>
+          )}
+
           {/* Author strip */}
           <div className="flex items-center gap-3 mt-4">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black"
-              style={{ backgroundColor: "rgba(255,255,255,0.2)" }}
-            >
-              {authorName.charAt(0).toUpperCase()}
-            </div>
+            {avatarUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={avatarUrl}
+                alt={authorName}
+                className="w-9 h-9 rounded-full object-cover border-2"
+                style={{ borderColor: "rgba(255,255,255,0.3)" }}
+              />
+            ) : (
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black shrink-0"
+                style={{ backgroundColor: "rgba(255,255,255,0.2)" }}
+              >
+                {authorName.charAt(0).toUpperCase()}
+              </div>
+            )}
             <div className="text-sm">
-              <span className="font-semibold">{authorName}</span>
-              {profile?.course_field && (
-                <span className="opacity-70 ml-2">{profile.course_field}</span>
-              )}
+              <p className="font-semibold">{authorName}</p>
+              <p className="opacity-70 text-xs">
+                {profile?.course_field && <span>{profile.course_field}</span>}
+                {profile?.course_field && institutionName && <span className="mx-1 opacity-50">·</span>}
+                {institutionName && <span>{institutionName}</span>}
+              </p>
             </div>
           </div>
         </div>
@@ -223,29 +278,15 @@ export default async function PublicOutputPage({
         </div>
 
         {/* ── Share / action bar ── */}
-        <div className="flex flex-wrap gap-3 items-center">
-          {/* Copy link button */}
-          <button
-            id="copy-share-btn"
-            data-url={shareUrl}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-          >
-            🔗 Copy Link
-          </button>
+        <PublicOutputActions
+          shareUrl={shareUrl}
+          content={output.content}
+          outputType={output.output_type}
+          title={`${projectTitle} — ${config.label}`}
+        />
 
-          {/* LinkedIn share */}
-          {output.output_type === "linkedin_post" && (
-            <button
-              id="copy-linkedin-btn"
-              data-content={output.content}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors"
-              style={{ borderColor: "#0077b5", color: "#0077b5", backgroundColor: "#fff" }}
-            >
-              💼 Copy for LinkedIn
-            </button>
-          )}
-
-          {/* Back to portfolio */}
+        {/* Back to portfolio */}
+        <div className="mt-3">
           <Link
             href={`/portfolio/${slug}`}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
@@ -287,38 +328,6 @@ export default async function PublicOutputPage({
         </div>
       </div>
 
-      {/* Inline script for copy buttons */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            function setupCopyBtn(id, getContent) {
-              const btn = document.getElementById(id);
-              if (!btn) return;
-              btn.addEventListener('click', function() {
-                const text = getContent(this);
-                if (!text) return;
-                navigator.clipboard.writeText(text).then(() => {
-                  const orig = this.innerHTML;
-                  this.innerHTML = '✓ Copied!';
-                  setTimeout(() => { this.innerHTML = orig; }, 2000);
-                }).catch(() => {
-                  const ta = document.createElement('textarea');
-                  ta.value = text;
-                  document.body.appendChild(ta);
-                  ta.select();
-                  document.execCommand('copy');
-                  document.body.removeChild(ta);
-                  const orig = this.innerHTML;
-                  this.innerHTML = '✓ Copied!';
-                  setTimeout(() => { this.innerHTML = orig; }, 2000);
-                });
-              });
-            }
-            setupCopyBtn('copy-share-btn', el => el.dataset.url);
-            setupCopyBtn('copy-linkedin-btn', el => el.dataset.content);
-          `,
-        }}
-      />
     </div>
   );
 }

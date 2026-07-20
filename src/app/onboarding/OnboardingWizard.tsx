@@ -153,6 +153,9 @@ function WizardInner({
   );
   const [pending, setPending] = useState(false);
   const [institutionId, setInstitutionId] = useState("");
+  const [fullName, setFullName] = useState(prefillName);
+  const [courseField, setCourseField] = useState("");
+  const [graduationYear, setGraduationYear] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
 
   const TOTAL_STEPS = 3;
@@ -170,6 +173,9 @@ function WizardInner({
   ];
 
   function goNext() {
+    // Validate current step before advancing
+    if (currentStep === 1 && !fullName.trim()) return;
+    if (currentStep === 2 && !institutionId) return;
     setCurrentStep((s) => Math.min(s + 1, TOTAL_STEPS));
   }
 
@@ -217,20 +223,25 @@ function WizardInner({
           action={completeOnboardingAction}
           onSubmit={() => setPending(true)}
         >
+          {/* Hidden inputs carry the controlled values to the server action */}
+          <input type="hidden" name="full_name" value={fullName} />
+          <input type="hidden" name="course_field" value={courseField} />
+          <input type="hidden" name="graduation_year" value={graduationYear} />
+
           {/* ── STEP 1: Full name ─────────────────────────── */}
           <div className={currentStep === 1 ? "block" : "hidden"}>
             <label
               className="block text-sm font-medium text-gray-700 mb-1"
-              htmlFor="full_name"
+              htmlFor="full_name_display"
             >
               Full name
             </label>
             <input
-              id="full_name"
-              name="full_name"
+              id="full_name_display"
               type="text"
               autoComplete="name"
-              defaultValue={prefillName}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
               placeholder="e.g. Frank Mwangi"
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent"
             />
@@ -256,14 +267,15 @@ function WizardInner({
             <div>
               <label
                 className="block text-sm font-medium text-gray-700 mb-1"
-                htmlFor="course_field"
+                htmlFor="course_field_display"
               >
                 Course / field of study
               </label>
               <input
-                id="course_field"
-                name="course_field"
+                id="course_field_display"
                 type="text"
+                value={courseField}
+                onChange={(e) => setCourseField(e.target.value)}
                 placeholder="e.g. Electrical Engineering, ICT, Fashion Design"
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent"
               />
@@ -272,17 +284,18 @@ function WizardInner({
             <div>
               <label
                 className="block text-sm font-medium text-gray-700 mb-1"
-                htmlFor="graduation_year"
+                htmlFor="graduation_year_display"
               >
                 Expected graduation year{" "}
                 <span className="font-normal text-gray-400">(optional)</span>
               </label>
               <input
-                id="graduation_year"
-                name="graduation_year"
+                id="graduation_year_display"
                 type="number"
                 min={2024}
                 max={2035}
+                value={graduationYear}
+                onChange={(e) => setGraduationYear(e.target.value)}
                 placeholder={String(new Date().getFullYear() + 1)}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent"
               />
