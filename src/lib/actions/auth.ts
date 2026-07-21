@@ -103,13 +103,15 @@ export async function signUpAction(formData: FormData) {
     redirectWithError("/signup", msg);
   }
 
-  // Supabase returns no error but user=null when the email already exists
-  // (unconfirmed duplicate). Surface a helpful message instead of silently
-  // redirecting to the confirm page.
-  if (!signUpData?.user) {
+  // When email confirmations are enabled and the address already exists,
+  // Supabase returns { error: null, user: <object>, identities: [] }.
+  // The user object is non-null but identities is empty — that is the signal
+  // that this is a duplicate. Surface a clear message instead of silently
+  // sending them to the confirm page (which would be confusing and misleading).
+  if (signUpData?.user && signUpData.user.identities?.length === 0) {
     redirectWithError(
       "/signup",
-      "An account with this email already exists. Please check your inbox for a confirmation link, or try signing in."
+      "An account with this email already exists. Check your inbox for a confirmation link, or try signing in instead."
     );
   }
 

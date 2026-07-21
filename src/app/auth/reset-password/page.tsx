@@ -3,19 +3,16 @@
  *
  * The "set new password" form.
  * Users land here after clicking the password reset link in their email.
- *
- * WHY THE SUSPENSE WRAPPER?
- * useSearchParams() reads the URL query string on the client.
- * Next.js requires any component that uses useSearchParams() to be
- * wrapped in a <Suspense> boundary, because during static pre-rendering
- * there is no URL to read from. Suspense tells Next.js "render a fallback
- * while we wait for client-side data to be available".
+ * The callback route (/auth/callback) handles verifyOtp() first, so by the
+ * time the user reaches this page the session is already established.
  */
 
 "use client";
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
 import { resetPasswordAction } from "@/lib/actions/auth";
 import Spinner from "@/components/ui/Spinner";
 
@@ -31,7 +28,6 @@ function EyeIcon({ open }: { open: boolean }) {
   );
 }
 
-// The inner component uses the hook — must be inside Suspense
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
@@ -41,18 +37,20 @@ function ResetPasswordForm() {
 
   return (
     <div className="w-full max-w-md p-8 bg-white rounded-2xl shadow-sm border border-gray-200">
-      <h1
-        className="text-2xl font-bold mb-2"
-        style={{ color: "var(--color-brand-primary)" }}
-      >
-        Set new password
-      </h1>
-      <p className="text-sm text-gray-500 mb-6">
-        Choose a strong password for your SkillNarrate account.
-      </p>
+      <div className="mb-8">
+        <h1
+          className="text-2xl font-bold mb-1"
+          style={{ color: "var(--color-brand-primary)" }}
+        >
+          Set new password
+        </h1>
+        <p className="text-sm text-gray-500">
+          Choose a strong password for your SkillNarrate account.
+        </p>
+      </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+        <div className="mb-5 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
           {error}
         </div>
       )}
@@ -66,13 +64,15 @@ function ResetPasswordForm() {
         className="space-y-4"
       >
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="password">
             New password
           </label>
           <div className="relative">
             <input
+              id="password"
               name="password"
               type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
               minLength={8}
               required
               placeholder="At least 8 characters"
@@ -91,13 +91,15 @@ function ResetPasswordForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="confirm_password">
             Confirm new password
           </label>
           <div className="relative">
             <input
+              id="confirm_password"
               name="confirm_password"
               type={showConfirm ? "text" : "password"}
+              autoComplete="new-password"
               minLength={8}
               required
               placeholder="Repeat your password"
@@ -125,19 +127,46 @@ function ResetPasswordForm() {
           {pending ? "Updating…" : "Update password"}
         </button>
       </form>
+
+      <p className="text-center text-sm text-gray-500 mt-6">
+        Remembered it?{" "}
+        <Link
+          href="/login"
+          className="font-semibold hover:underline"
+          style={{ color: "var(--color-brand-primary)" }}
+        >
+          Sign in
+        </Link>
+      </p>
     </div>
   );
 }
 
-// The exported page wraps the form in Suspense
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={
-      <div className="w-full max-w-md p-8 bg-white rounded-2xl shadow-sm border border-gray-200 text-center">
-        <p className="text-sm text-gray-400">Loading…</p>
-      </div>
-    }>
-      <ResetPasswordForm />
-    </Suspense>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
+      {/* Logo */}
+      <Link href="/" className="flex items-center gap-2.5 mb-6">
+        <Image
+          src="/images/logo.png"
+          alt="SkillNarrate"
+          width={40}
+          height={40}
+          className="rounded-xl"
+          priority
+        />
+        <span className="font-bold text-lg" style={{ color: "var(--color-brand-text)" }}>
+          SkillNarrate
+        </span>
+      </Link>
+
+      <Suspense fallback={
+        <div className="w-full max-w-md p-8 bg-white rounded-2xl shadow-sm border border-gray-200 text-center">
+          <p className="text-sm text-gray-400">Loading…</p>
+        </div>
+      }>
+        <ResetPasswordForm />
+      </Suspense>
+    </div>
   );
 }
