@@ -39,9 +39,10 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
 
   // Pick up all the possible query params Supabase can send
-  const code = searchParams.get("code");           // OAuth flow
-  const token_hash = searchParams.get("token_hash"); // Email confirm flow
-  const type = searchParams.get("type");             // "email", "recovery", etc.
+  const code       = searchParams.get("code");        // OAuth flow
+  const token_hash = searchParams.get("token_hash");  // Email confirm / recovery flow
+  const type       = searchParams.get("type");        // "email", "recovery", etc.
+  const next       = searchParams.get("next");        // Where to send after success
 
   // If something went wrong upstream, bail out gracefully
   if (!code && !token_hash) {
@@ -61,6 +62,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(
         `${origin}/login?error=${encodeURIComponent(error.message)}`
       );
+    }
+
+    // For password recovery, go directly to the reset page (session is now set).
+    // Skip the onboarding/dashboard routing below.
+    if (type === "recovery") {
+      const destination = next ?? "/auth/reset-password";
+      return NextResponse.redirect(`${origin}${destination}`);
     }
   }
 
@@ -96,6 +104,9 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Returning user → dashboard
+  // Returning user (or explicit next param) → destination
+  if (next) {
+    return NextResponse.redirect(`${origin}${next}`);
+  }
   return NextResponse.redirect(`${origin}/dashboard`);
 }

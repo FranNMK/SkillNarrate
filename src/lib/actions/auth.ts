@@ -193,8 +193,13 @@ export async function forgotPasswordAction(formData: FormData) {
     redirectWithError("/forgot-password", "Email is required.");
   }
 
+  // IMPORTANT: redirectTo must point to /auth/callback (NOT /auth/reset-password).
+  // Supabase embeds a token_hash in this URL. The callback route calls verifyOtp()
+  // to exchange it for a session, then redirects to /auth/reset-password.
+  // If you point directly to /auth/reset-password, there is no session and
+  // supabase.auth.updateUser() will fail with "Auth session missing!".
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password`,
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/auth/reset-password`,
   });
 
   if (error) {
