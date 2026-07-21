@@ -95,9 +95,8 @@ export async function signUpAction(formData: FormData) {
       error.message ||
       // @ts-expect-error — Supabase error objects sometimes have extra fields
       error.msg ||
-      // @ts-expect-error
-      error.error_description ||
-      // @ts-expect-error
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (error as any).error_description ||
       (typeof error.code === "string" ? `Sign-up failed (${error.code})` : null) ||
       "Sign-up failed. Please check your details and try again.";
     redirectWithError("/signup", msg);
