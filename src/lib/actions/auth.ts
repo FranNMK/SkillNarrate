@@ -36,8 +36,19 @@ import { createClient } from "@/lib/supabase/server";
 // ── Helper: encode error message into a redirect URL ─────────
 // Instead of throwing, we redirect to the same page with an error param.
 // The page component reads this and shows the error message.
-function redirectWithError(path: string, message: string): never {
-  redirect(`${path}?error=${encodeURIComponent(message)}`);
+//
+// WHY THE FALLBACK?
+// Supabase occasionally returns an AuthError whose `.message` is undefined
+// (e.g. when email signups are disabled, or the provider returns an empty
+// error body). Passing undefined to encodeURIComponent produces the string
+// "undefined"; passing the raw error object produces "{}". Both look broken.
+// We normalise here so the user always sees a useful message.
+function redirectWithError(path: string, message: string | undefined | null): never {
+  const msg =
+    (typeof message === "string" && message.trim().length > 0)
+      ? message.trim()
+      : "An unexpected error occurred. Please try again.";
+  redirect(`${path}?error=${encodeURIComponent(msg)}`);
 }
 
 // ────────────────────────────────────────────────────────────
@@ -78,7 +89,18 @@ export async function signUpAction(formData: FormData) {
   });
 
   if (error) {
-    redirectWithError("/signup", error.message);
+    // error.message can be undefined on certain Supabase error shapes.
+    // Pull the best available human-readable message from the error object.
+    const msg =
+      error.message ||
+      // @ts-expect-error — Supabase error objects sometimes have extra fields
+      error.msg ||
+      // @ts-expect-error
+      error.error_description ||
+      // @ts-expect-error
+      (typeof error.code === "string" ? `Sign-up failed (${error.code})` : null) ||
+      "Sign-up failed. Please check your details and try again.";
+    redirectWithError("/signup", msg);
   }
 
   // Success — tell the user to check their email
