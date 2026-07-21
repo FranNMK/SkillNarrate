@@ -65,54 +65,109 @@ function emailShell(title: string, body: string): string {
 </html>`;
 }
 
-// ── Template 1: Welcome / Onboarding email ───────────────────
-// Sent after the FIRST successful login (Phase 2 trigger).
-// This is not an auth email — it's a warm welcome with next steps.
+// ── Template 1: Personalised welcome email ───────────────────
+// Sent after the user COMPLETES onboarding (all profile fields saved).
+// This is a warm, detailed welcome that explains the platform and
+// what they can do now that their profile is set up.
 export function welcomeEmailTemplate(params: {
   fullName: string;
+  firstName?: string;
+  courseField?: string;
   appUrl: string;
 }): { subject: string; html: string } {
-  const { fullName, appUrl } = params;
-  const firstName = fullName.split(" ")[0] || fullName;
+  const { fullName, appUrl, courseField } = params;
+  const firstName = params.firstName || fullName.split(" ")[0] || fullName;
+  const courseNote = courseField
+    ? `<p style="margin:0 0 16px;color:#4B5563;font-size:15px;line-height:1.6;">
+        We've set up your profile for <strong>${courseField}</strong> — our AI will use this
+        context to ask you the most relevant questions when you start your first project interview.
+      </p>`
+    : "";
 
   const body = `
-    <h1 style="margin:0 0 8px;color:#0F766E;font-size:24px;font-weight:700;">
-      Welcome, ${firstName}! 🎉
+    <h1 style="margin:0 0 6px;color:#0F766E;font-size:24px;font-weight:700;">
+      Welcome to SkillNarrate, ${firstName}!
     </h1>
+    <p style="margin:0 0 20px;color:#9CA3AF;font-size:13px;">Your profile is all set up. Here's what happens next.</p>
+
+    <p style="margin:0 0 16px;color:#4B5563;font-size:15px;line-height:1.6;">
+      Hi ${firstName}, you've just joined a platform built specifically for TVET students
+      like you — one that helps you turn the practical work you do every day into content
+      that employers, clients, and institutions can actually see.
+    </p>
+
+    ${courseNote}
+
     <p style="margin:0 0 20px;color:#4B5563;font-size:15px;line-height:1.6;">
-      You're in. SkillNarrate is going to help you turn the projects you've already
-      built into content that gets you noticed — case studies, LinkedIn posts,
-      pitch scripts, and killer interview answers.
+      Here's exactly what SkillNarrate lets you do:
     </p>
 
     <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:20px;margin:0 0 24px;">
-      <p style="margin:0 0 12px;font-weight:600;color:#166534;font-size:14px;">Here's how to get started:</p>
-      <ol style="margin:0;padding-left:20px;color:#166534;font-size:14px;line-height:1.8;">
-        <li>Complete your profile (tell us your institution and course)</li>
-        <li>Add your first project — describe what you built</li>
-        <li>Let the AI interview you about it (takes ~5 minutes)</li>
-        <li>Pick your output format and generate your content</li>
-      </ol>
+      <p style="margin:0 0 12px;font-weight:700;color:#166534;font-size:14px;">Your 4-step journey:</p>
+      <table cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+          <td style="padding:6px 0;vertical-align:top;width:28px;">
+            <span style="background:#0F766E;color:#fff;font-size:11px;font-weight:700;border-radius:50%;display:inline-block;width:20px;height:20px;text-align:center;line-height:20px;">1</span>
+          </td>
+          <td style="padding:6px 0;color:#166534;font-size:14px;line-height:1.6;">
+            <strong>Add a project</strong> — describe something you've built, repaired, designed, or coded. A sentence or two is enough to start.
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;vertical-align:top;width:28px;">
+            <span style="background:#0F766E;color:#fff;font-size:11px;font-weight:700;border-radius:50%;display:inline-block;width:20px;height:20px;text-align:center;line-height:20px;">2</span>
+          </td>
+          <td style="padding:6px 0;color:#166534;font-size:14px;line-height:1.6;">
+            <strong>Do the AI interview</strong> — answer 5–8 guided questions about your project. Takes about 5 minutes. The AI adapts to your course.
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;vertical-align:top;width:28px;">
+            <span style="background:#0F766E;color:#fff;font-size:11px;font-weight:700;border-radius:50%;display:inline-block;width:20px;height:20px;text-align:center;line-height:20px;">3</span>
+          </td>
+          <td style="padding:6px 0;color:#166534;font-size:14px;line-height:1.6;">
+            <strong>Generate your content</strong> — pick a format: a case study, LinkedIn post, pitch script, or interview answer. One click to generate.
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;vertical-align:top;width:28px;">
+            <span style="background:#0F766E;color:#fff;font-size:11px;font-weight:700;border-radius:50%;display:inline-block;width:20px;height:20px;text-align:center;line-height:20px;">4</span>
+          </td>
+          <td style="padding:6px 0;color:#166534;font-size:14px;line-height:1.6;">
+            <strong>Share your portfolio</strong> — activate your public portfolio link and share it on LinkedIn, WhatsApp, or in job applications.
+          </td>
+        </tr>
+      </table>
     </div>
 
-    <table width="100%" cellpadding="0" cellspacing="0">
+    <p style="margin:0 0 20px;color:#4B5563;font-size:15px;line-height:1.6;">
+      The students who get the most out of SkillNarrate start with just one project —
+      something simple they already finished. You don't need a perfect project; you need
+      a real one. Start there.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
       <tr>
         <td align="center">
-          <a href="${appUrl}/onboarding"
-             style="display:inline-block;background:#0F766E;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px;">
-            Complete your profile →
+          <a href="${appUrl}/dashboard"
+             style="display:inline-block;background:#0F766E;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 32px;border-radius:8px;letter-spacing:0.2px;">
+            Go to your dashboard →
           </a>
         </td>
       </tr>
     </table>
 
-    <p style="margin:24px 0 0;color:#9CA3AF;font-size:12px;text-align:center;">
-      Questions? Reply to this email — we read every message.
+    <p style="margin:0 0 8px;color:#6B7280;font-size:13px;line-height:1.6;">
+      If you have any questions, suggestions, or run into any issues — just reply to this email.
+      We read and respond to every message personally.
+    </p>
+    <p style="margin:0;color:#6B7280;font-size:13px;">
+      — The SkillNarrate team
     </p>
   `;
 
   return {
-    subject: `Welcome to SkillNarrate, ${firstName}!`,
+    subject: `You're all set, ${firstName} — your SkillNarrate profile is ready`,
     html: emailShell("Welcome to SkillNarrate", body),
   };
 }

@@ -45,16 +45,10 @@ export async function POST(request: Request) {
 
     const { data: profile } = await adminClient
       .from("profiles")
-      .select("full_name, onboarding_completed")
+      .select("full_name, course_field, onboarding_completed")
       .eq("id", user.id)
-      .returns<{ full_name: string | null; onboarding_completed: boolean }[]>()
+      .returns<{ full_name: string | null; course_field: string | null; onboarding_completed: boolean }[]>()
       .single();
-
-    // Only send the welcome email to brand new users
-    // (onboarding_completed = false means first login)
-    if (profile?.onboarding_completed) {
-      return NextResponse.json({ skipped: true, reason: "Already onboarded" });
-    }
 
     const fullName = profile?.full_name ||
       user.user_metadata?.full_name ||
@@ -63,6 +57,7 @@ export async function POST(request: Request) {
 
     const { subject, html } = welcomeEmailTemplate({
       fullName,
+      courseField: profile?.course_field ?? undefined,
       appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "https://skillnarrate.com",
     });
 

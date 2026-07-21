@@ -10,6 +10,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import WelcomePopup from "@/components/features/WelcomePopup";
 import OnboardingWelcomeModal from "@/components/features/OnboardingWelcomeModal";
+import OnboardingNudgeBanner from "@/components/features/OnboardingNudgeBanner";
 import type { OutputType } from "@/types/database";
 
 export const metadata = { title: "Dashboard — SkillNarrate" };
@@ -45,17 +46,30 @@ export default async function DashboardPage({
   if (!user) redirect("/login");
 
   // Fetch profile with institution name (JOIN via foreign key)
+  // Also fetch onboarding_completed to drive the nudge banner.
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, course_field, graduation_year, institutions(name)")
+    .select("full_name, course_field, graduation_year, onboarding_completed, institutions(name)")
     .eq("id", user.id)
     .returns<{
       full_name: string | null;
       course_field: string | null;
       graduation_year: number | null;
+      onboarding_completed: boolean | null;
       institutions: { name: string } | null;
     }[]>()
     .single();
+
+  // If profile is completely empty (no name AND no course) redirect to onboarding.
+  // This handles accounts where the trigger ran but the user has never filled anything in.
+  const profileIsEmpty = !profile?.full_name && !profile?.course_field;
+  if (profileIsEmpty && onboarded !== "1") {
+    redirect("/onboarding");
+  }
+
+  // Show the nudge banner if onboarding was skipped / not completed
+  const needsOnboardingNudge =
+    !profile?.onboarding_completed && !profileIsEmpty && onboarded !== "1";
 
   // Fetch the user's projects (most recent first)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -96,6 +110,9 @@ export default async function DashboardPage({
 
       {/* ── First-login welcome popup (client component, once per session) ── */}
       {onboarded !== "1" && <WelcomePopup firstName={firstName} />}
+
+      {/* ── Incomplete-profile nudge banner (dismissible) ── */}
+      {needsOnboardingNudge && <OnboardingNudgeBanner firstName={firstName} />}
 
       {/* ── Welcome header ── */}
       <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">

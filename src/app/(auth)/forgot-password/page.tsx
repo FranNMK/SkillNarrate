@@ -11,6 +11,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { forgotPasswordAction } from "@/lib/actions/auth";
+import Spinner from "@/components/ui/Spinner";
 
 function ForgotPasswordForm() {
   const searchParams = useSearchParams();
@@ -63,9 +64,10 @@ function ForgotPasswordForm() {
         <button
           type="submit"
           disabled={pending}
-          className="w-full py-2.5 rounded-lg text-white font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="w-full py-2.5 rounded-lg text-white font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
           style={{ backgroundColor: "var(--color-brand-primary)" }}
         >
+          {pending && <Spinner size={14} color="#fff" />}
           {pending ? "Sending…" : "Send reset link"}
         </button>
       </form>

@@ -419,7 +419,7 @@ function WizardInner({
         >
           Skip for now
         </a>
-        {" "}— you can fill this in from your profile settings later.
+        {" "}— you can complete this from your dashboard later.
       </p>
     </div>
   );
