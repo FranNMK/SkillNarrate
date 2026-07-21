@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   description: "How SkillNarrate collects, uses, and protects your personal data.",
 };
 
-const LAST_UPDATED = "January 2025";
+const LAST_UPDATED = "July 2026";
 const CONTACT_EMAIL = "frankmk2025@gmail.com";
 const APP_URL = "https://skillnarrate.com";
 

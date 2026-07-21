@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   description: "The terms and conditions governing use of the SkillNarrate platform.",
 };
 
-const LAST_UPDATED = "January 2025";
+const LAST_UPDATED = "July 2026";
 const CONTACT_EMAIL = "frankmk2025@gmail.com";
 
 export default function TermsOfServicePage() {
@@ -226,7 +226,7 @@ export default function TermsOfServicePage() {
               </li>
               <li>
                 <strong>Resend</strong> — Transactional email delivery.{" "}
-                <a href="https://resend.com/terms" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: "var(--color-brand-primary)" }}>
+                <a href="https://resend.com/docs/dashboard/emails/introduction" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: "var(--color-brand-primary)" }}>
                   Resend Terms
                 </a>
               </li>
