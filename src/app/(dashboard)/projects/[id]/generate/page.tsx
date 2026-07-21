@@ -18,7 +18,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import OutputGenerator from "@/components/features/OutputGenerator";
 import PrivateOutputCard from "@/components/features/PrivateOutputCard";
-import ProjectLinksEditor from "@/components/features/ProjectLinksEditor";
 import type { OutputType, InterviewQA } from "@/types/database";
 
 const OUTPUT_TYPE_LABELS: Record<OutputType, string> = {
@@ -107,24 +106,11 @@ export default async function GeneratePage({
   const outputLabel = OUTPUT_TYPE_LABELS[primaryOutputType] ?? project.output_type;
 
   return (
-    <div className="max-w-3xl mx-auto">
-      {/* ── Breadcrumb ── */}
-      <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6">
-        <Link href="/dashboard" className="hover:text-gray-800 transition-colors">
-          My Projects
-        </Link>
-        <span>/</span>
-        <span className="text-gray-700 font-medium truncate max-w-[200px]">
-          {project.title}
-        </span>
-        <span>/</span>
-        <span className="text-gray-800 font-medium">Generate</span>
-      </nav>
-
+    <div>
       {/* ── Header ── */}
       <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold mb-1" style={{ color: "var(--color-brand-text)" }}>
+          <h1 className="text-xl font-bold mb-1" style={{ color: "var(--color-brand-text)" }}>
             Your {outputLabel}
           </h1>
           <p className="text-sm text-gray-500">
@@ -132,14 +118,29 @@ export default async function GeneratePage({
             <span className="font-medium text-gray-700">{project.title}</span>.
           </p>
         </div>
-        {/* Continue Interview — allows adding more Q&As to improve outputs */}
-        <Link
-          href={`/projects/${project.id}/interview?continue=1`}
-          className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-colors"
-          style={{ borderColor: "var(--color-brand-primary)", color: "var(--color-brand-primary)" }}
-        >
-          🎙 Continue Interview
-        </Link>
+
+        {/* Action buttons: gear (settings) + continue interview */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Gear icon → project settings */}
+          <Link
+            href={`/projects/${project.id}/settings`}
+            className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300 transition-colors"
+            title="Project settings"
+          >
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd"/>
+            </svg>
+          </Link>
+
+          {/* Continue Interview — allows adding more Q&As to improve outputs */}
+          <Link
+            href={`/projects/${project.id}/interview?continue=1`}
+            className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-colors"
+            style={{ borderColor: "var(--color-brand-primary)", color: "var(--color-brand-primary)" }}
+          >
+            🎙 Continue Interview
+          </Link>
+        </div>
       </div>
 
       {/* ── Error / success banners ── */}
@@ -192,16 +193,20 @@ export default async function GeneratePage({
         </div>
       </div>
 
-      {/* ── Project links / media editor ── */}
-      <ProjectLinksEditor
-        projectId={project.id}
-        initial={{
-          logo_url: project.logo_url ?? null,
-          demo_video_url: project.demo_video_url ?? null,
-          demo_link: project.demo_link ?? null,
-          github_link: project.github_link ?? null,
-        }}
-      />
+      {/* ── Project links note — direct to settings ── */}
+      <div className="mt-6 bg-white rounded-2xl border border-gray-200 p-4 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-gray-700">Project Details &amp; Links</p>
+          <p className="text-xs text-gray-400 mt-0.5">Logo, GitHub, demo link &amp; video — shown on your public portfolio.</p>
+        </div>
+        <Link
+          href={`/projects/${project.id}/settings`}
+          className="shrink-0 text-xs font-semibold px-3 py-2 rounded-lg border transition-colors"
+          style={{ borderColor: "var(--color-brand-primary)", color: "var(--color-brand-primary)" }}
+        >
+          Edit in Settings →
+        </Link>
+      </div>
 
       {/* ── Interview summary (collapsible reference) ── */}
       <details className="mt-6 bg-white rounded-2xl border border-gray-200 overflow-hidden">

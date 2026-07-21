@@ -108,5 +108,6 @@ export async function completeOnboardingAction(formData: FormData) {
 
   // Revalidate all cached data so the dashboard sees the updated profile
   revalidatePath("/", "layout");
-  redirect("/dashboard");
+  // Pass ?onboarded=1 so the dashboard can show the post-onboarding welcome
+  redirect("/dashboard?onboarded=1");
 }

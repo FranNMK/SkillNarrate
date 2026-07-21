@@ -18,7 +18,6 @@
  * the "interaction" — a clean separation.
  */
 
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import InterviewChat from "@/components/features/InterviewChat";
@@ -92,19 +91,11 @@ export default async function InterviewPage({
     : [];
 
   return (
-    <div className="max-w-3xl mx-auto flex flex-col" style={{ minHeight: "calc(100vh - 80px)" }}>
-      {/* ── Breadcrumb ── */}
-      <nav className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-        <Link href="/dashboard" className="hover:text-gray-800 transition-colors">
-          My Projects
-        </Link>
-        <span>/</span>
-        <span className="text-gray-700 font-medium truncate max-w-[200px]">
-          {project.title}
-        </span>
-        <span>/</span>
-        <span className="text-gray-800 font-medium">Interview</span>
-      </nav>
+    <div className="flex flex-col" style={{ minHeight: "calc(100vh - 160px)" }}>
+      {/* ── Page title ── */}
+      <h1 className="text-lg font-bold mb-4" style={{ color: "var(--color-brand-text)" }}>
+        AI Interview
+      </h1>
 
       {/* ── Error banner (e.g. from completeInterviewAction redirect) ── */}
       {error && (

@@ -77,10 +77,11 @@ export async function updateProjectLinksAction(formData: FormData) {
     .eq("user_id", user.id);
 
   if (error) {
-    redirect(`/projects/${projectId}/generate?error=${encodeURIComponent(error.message)}`);
+    redirect(`/projects/${projectId}/settings?error=${encodeURIComponent(error.message)}`);
   }
 
+  revalidatePath(`/projects/${projectId}/settings`);
   revalidatePath(`/projects/${projectId}/generate`);
   revalidatePath("/portfolio", "layout");
-  redirect(`/projects/${projectId}/generate?linksSaved=true`);
+  redirect(`/projects/${projectId}/settings?saved=true`);
 }

@@ -9,6 +9,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import WelcomePopup from "@/components/features/WelcomePopup";
+import OnboardingWelcomeModal from "@/components/features/OnboardingWelcomeModal";
 import type { OutputType } from "@/types/database";
 
 export const metadata = { title: "Dashboard — SkillNarrate" };
@@ -29,7 +30,12 @@ const OUTPUT_TYPE_COLORS: Record<OutputType, { bg: string; text: string }> = {
   interview_answer: { bg: "#fdf4ff", text: "#7e22ce" },
 };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ onboarded?: string }>;
+}) {
+  const { onboarded } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -85,8 +91,11 @@ export default async function DashboardPage() {
 
   return (
     <div>
+      {/* ── Post-onboarding welcome modal (only shown right after completing wizard) ── */}
+      {onboarded === "1" && <OnboardingWelcomeModal firstName={firstName} />}
+
       {/* ── First-login welcome popup (client component, once per session) ── */}
-      <WelcomePopup firstName={firstName} />
+      {onboarded !== "1" && <WelcomePopup firstName={firstName} />}
 
       {/* ── Welcome header ── */}
       <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
@@ -214,21 +223,35 @@ export default async function DashboardPage() {
                     </p>
                   </div>
 
-                  {/* Action link */}
-                  <Link
-                    href={
-                      project.interview_completed
-                        ? `/projects/${project.id}/generate`
-                        : `/projects/${project.id}/interview`
-                    }
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors shrink-0"
-                    style={{
-                      borderColor: "var(--color-brand-primary)",
-                      color: "var(--color-brand-primary)",
-                    }}
-                  >
-                    {project.interview_completed ? "View / Generate →" : "Continue →"}
-                  </Link>
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* Gear icon → project settings */}
+                    <Link
+                      href={`/projects/${project.id}/settings`}
+                      className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300 transition-colors"
+                      title="Project settings"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd"/>
+                      </svg>
+                    </Link>
+
+                    {/* Primary action */}
+                    <Link
+                      href={
+                        project.interview_completed
+                          ? `/projects/${project.id}/generate`
+                          : `/projects/${project.id}/interview`
+                      }
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors"
+                      style={{
+                        borderColor: "var(--color-brand-primary)",
+                        color: "var(--color-brand-primary)",
+                      }}
+                    >
+                      {project.interview_completed ? "View / Generate →" : "Continue →"}
+                    </Link>
+                  </div>
                 </div>
               );
             })}
