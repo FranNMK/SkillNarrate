@@ -35,8 +35,12 @@ type SetAllCookies = Parameters<NonNullable<CookieMethodsServer["setAll"]>>[0];
 // /settings/* IS protected — that's where portfolio management lives.
 const PROTECTED_ROUTES = ["/dashboard", "/onboarding", "/projects", "/settings"];
 
-// Routes that logged-in users shouldn't see (auth pages)
-const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
+// Routes that logged-in users shouldn't see (auth pages).
+// NOTE: "/signup/confirm" is intentionally excluded — a newly signed-up user
+// is technically "logged in" (Supabase sets a session on signUp) but still
+// needs to see the "check your email" confirmation page before proceeding.
+const AUTH_ROUTES = ["/login", "/forgot-password"];
+const AUTH_EXACT_ROUTES = ["/signup"];
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -68,7 +72,9 @@ export async function middleware(request: NextRequest) {
 
   // ── Route protection ─────────────────────────────────────
   const isProtected = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
-  const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
+  const isAuthRoute =
+    AUTH_ROUTES.some((route) => pathname.startsWith(route)) ||
+    AUTH_EXACT_ROUTES.some((route) => pathname === route);
 
   // Logged-out user visiting a protected route → send to login
   if (!user && isProtected) {

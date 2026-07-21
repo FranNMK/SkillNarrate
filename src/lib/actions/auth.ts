@@ -44,10 +44,11 @@ import { createClient } from "@/lib/supabase/server";
 // "undefined"; passing the raw error object produces "{}". Both look broken.
 // We normalise here so the user always sees a useful message.
 function redirectWithError(path: string, message: string | undefined | null): never {
-  const msg =
-    (typeof message === "string" && message.trim().length > 0)
-      ? message.trim()
-      : "An unexpected error occurred. Please try again.";
+  const trimmed = typeof message === "string" ? message.trim() : "";
+  // Reject empty strings and JSON-serialised objects like "{}" or "[]" that
+  // Supabase occasionally surfaces when the server returns an empty error body.
+  const isJunk = trimmed.length === 0 || /^\{.*\}$|^\[.*\]$/.test(trimmed);
+  const msg = isJunk ? "An unexpected error occurred. Please try again." : trimmed;
   redirect(`${path}?error=${encodeURIComponent(msg)}`);
 }
 
