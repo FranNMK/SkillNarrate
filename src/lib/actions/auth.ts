@@ -76,7 +76,7 @@ export async function signUpAction(formData: FormData) {
     redirectWithError("/signup", "Password must be at least 8 characters.");
   }
 
-  const { error } = await supabase.auth.signUp({
+  const { data: signUpData, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -101,6 +101,16 @@ export async function signUpAction(formData: FormData) {
       (typeof error.code === "string" ? `Sign-up failed (${error.code})` : null) ||
       "Sign-up failed. Please check your details and try again.";
     redirectWithError("/signup", msg);
+  }
+
+  // Supabase returns no error but user=null when the email already exists
+  // (unconfirmed duplicate). Surface a helpful message instead of silently
+  // redirecting to the confirm page.
+  if (!signUpData?.user) {
+    redirectWithError(
+      "/signup",
+      "An account with this email already exists. Please check your inbox for a confirmation link, or try signing in."
+    );
   }
 
   // Success — tell the user to check their email
@@ -188,9 +198,17 @@ export async function forgotPasswordAction(formData: FormData) {
   });
 
   if (error) {
-    redirectWithError("/forgot-password", error.message);
+    // Supabase can return an empty-body error when its email provider is
+    // misconfigured. Always show something useful.
+    const msg =
+      (error.message && error.message.trim().length > 0)
+        ? error.message
+        : "Could not send reset email. Please try again later.";
+    redirectWithError("/forgot-password", msg);
   }
 
+  // Always redirect to "sent" — even if the email doesn't exist in our DB.
+  // This prevents email enumeration (don't tell attackers which emails exist).
   redirect("/forgot-password/sent");
 }
 
