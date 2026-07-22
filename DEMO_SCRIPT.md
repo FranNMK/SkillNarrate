@@ -1,26 +1,26 @@
 # 🎬 DEMO RECORDING SCRIPT — SkillNarrate
-### Delete this file after recording. Do not commit.
+### Delete this file after recording. Do not commit to the public repo.
 
 > **Total target time:** under 3 minutes  
 > **Read at a calm, natural pace** — do not rush.  
-> Everything in `[BRACKETS]` = what to do on screen, not spoken aloud.  
-> Everything outside brackets = what you say, word for word.
+> `[BRACKETS]` = on-screen actions only. Do NOT say these out loud.  
+> Everything outside brackets = your exact spoken words.
 
 ---
 
 ## BEFORE YOU HIT RECORD — BROWSER SETUP
 
-Open these three tabs in order and keep them ready:
+Open all tabs **before** pressing record. Have them ready to switch to instantly.
 
-| Tab | URL | Used at |
-|-----|-----|---------|
-| Tab 1 | `skill-narrate.vercel.app/projects/new` | 0:28 |
-| Tab 2 | `skill-narrate.vercel.app/projects/new` → go through interview live | 0:48 |
-| Tab 3 | `skill-narrate.vercel.app/portfolio/francis-6c050ff3` | 1:48 |
+| Tab # | URL to open | Used at timestamp |
+|-------|-------------|-------------------|
+| **Tab 1** | `skill-narrate.vercel.app/projects/new` | 0:28 — create the project live |
+| **Tab 2** | Your pre-completed Smart Irrigation project → `/projects/[id]/generate` | 1:38 — skip straight to generate |
+| **Tab 3** | `skill-narrate.vercel.app/portfolio/francis-6c050ff3` | 2:00 — show live portfolio |
 
-> **Tip:** Have a second browser window with the already-completed project open so you
-> can skip to the generate step without waiting through 5 live interview exchanges.
-> Use your real logged-in demo account.
+> ⚠️ **Important:** Tab 2 must already have a **finished interview** (all 5 exchanges done,
+> "End Interview" already clicked). Do this before recording so you don't waste
+> time doing all 5 exchanges live. The live demo only shows Q1 and Q2.
 
 ---
 
@@ -28,7 +28,7 @@ Open these three tabs in order and keep them ready:
 
 ## ▶ 00:00 — HOOK (10 sec)
 
-**[Camera on face, or simple dark title card: "SkillNarrate"]**
+**[Camera on face, or a plain title card showing "SkillNarrate — Build it. Tell it. Own it."]**
 
 > "Every year, thousands of TVET students in Kenya complete real, impressive
 > projects — smart systems, web apps, fabricated equipment. And then they walk
@@ -48,107 +48,125 @@ Open these three tabs in order and keep them ready:
 
 ---
 
-## ▶ 00:28 — DEMO STARTS: CREATE A PROJECT (20 sec)
+## ▶ 00:28 — DEMO: CREATE A PROJECT (20 sec)
 
-**[Switch to browser — Tab 1: `/projects/new` page is visible]**
+**[Switch to Tab 1 — the `/projects/new` form is visible on screen]**
 
-> "A student comes in, fills in their project name and picks what they want
+> "A student comes in, gives their project a name, and picks what they want
 > to generate."
 
-**[Type in the Project title field:]**
+**[Click into the Project title field and type:]**
+
 ```
 Smart Irrigation System
 ```
 
-**[Type in the Description field — optional, you can leave it blank or type:]**
+**[Click into the Description field and type:]**
+
 ```
-An automated irrigation controller built with Arduino that monitors
-soil moisture and waters crops only when needed.
+An automated irrigation controller built with Arduino that monitors soil
+moisture and waters crops only when needed.
 ```
 
-**[Click through the four output type cards slowly so they're visible]**
+**[Hover over each of the four output type cards so they are visible]**
 
-> "Case study, LinkedIn post, pitch script, or a STAR-format interview answer —
-> and the AI tailors every question it asks to whichever one you pick."
+> "Case study, LinkedIn post, pitch script, or a STAR-format interview answer.
+> The AI tailors every question it asks to whichever format you pick."
 
-**[Click the "Case Study" card to select it]**
+**[Click the "Case Study" card to select it — it highlights teal]**
 
 **[Click "Start Interview →"]**
 
 ---
 
-## ▶ 00:48 — DEMO: AI INTERVIEW — QUESTION 1 (20 sec)
+## ▶ 00:48 — DEMO: QUESTION 1 — THE OPENING (18 sec)
 
-**[Interview page loads. The AI's first question appears on screen.]**
+**[Interview page loads. Wait for the AI's first question to appear in the chat.]**
 
-> **The AI will ask something like:**
-> *"What specific problem or need were you trying to solve with the
-> Smart Irrigation System — what was happening that made you decide
-> to build it?"*
+**🤖 The AI will ask exactly this (or very close):**
+> *"Could you please describe the specific problem or challenge within Kenyan
+> agriculture that your 'Smart Irrigation System' aims to address?"*
 
-**[Point to the question on screen]**
+**[Let the question sit on screen for 2 seconds so viewers can read it]**
 
-> "The AI opens with a question tailored to a case study output —
-> asking about the problem, not just 'tell me about your project'."
+> "The AI opens with a question shaped for a case study — asking about the
+> problem, not just 'tell me about your project'."
 
-**[Type the following answer into the chat input and click Send:]**
+**[Click into the answer input and type — or paste — this answer:]**
+
 ```
 Farmers in my area were watering their crops manually, sometimes twice a day,
-even when the soil was already wet. They were wasting water and their crops
-were getting overwatered. I wanted to automate it so the system only waters
-when the soil moisture sensor reads below a set threshold.
+even when the soil already had enough water. They were wasting water and their
+crops were getting overwatered. I wanted to automate it so the system only
+waters when the soil moisture sensor reads below a set threshold.
 ```
+
+**[Click Send]**
 
 ---
 
-## ▶ 01:08 — DEMO: AI FOLLOW-UP — THE KEY MOMENT (30 sec)
+## ▶ 01:06 — DEMO: QUESTION 2 — THE ADAPTIVE MOMENT (32 sec)
 
-**[Wait for the AI's next question to appear. It will follow up on something
-specific from your answer — likely the sensor or the threshold logic.]**
+**[Wait for the AI's second question to appear — it takes 2–3 seconds]**
 
-> **The AI will ask something like:**
-> *"You mentioned the system only waters when moisture drops below a set
-> threshold — how did you decide what that threshold should be, and was
-> it adjustable for different crops?"*
+**🤖 The AI will ask exactly this (or very close):**
+> *"That's a clear problem you've identified. Can you tell me more about how your
+> 'Smart Irrigation System' actually works to achieve this automation, from the
+> sensor reading to the watering action?"*
 
-**[Point at the question on screen — this is your callout moment]**
+**[Point to or zoom into the question on screen]**
 
-> "Watch this — the AI just read my answer and followed up on the specific
-> detail I mentioned: the moisture threshold. It didn't ask a generic
-> next question. It adapted."
+> "Watch this question carefully."
 
-> "This is the key differentiator. There's no fixed question list.
-> Every conversation is different because every student's project is different."
+> "I mentioned a moisture threshold in my answer — and the AI immediately
+> followed up on that specific detail. It didn't move to a generic next question.
+> It adapted to what I said."
 
-**[Type the following answer and click Send:]**
+> "This is the key differentiator. There's no fixed question list. Every
+> conversation is different because every student's project is different."
+
+**[Type — or paste — this answer:]**
+
 ```
-I set the default threshold at 40% moisture, but I added a small potentiometer
-on the circuit board so the farmer can adjust it depending on the crop.
-Tomatoes need more water than maize, so I wanted it to be flexible.
+I set the default threshold at 40% soil moisture, but I added a small
+potentiometer on the circuit board so the farmer can adjust it depending on
+the crop. Tomatoes need more water than maize, so I wanted it to be flexible
+without having to reprogram anything.
 ```
+
+**[Click Send]**
+
+**[Wait for Question 3 to appear — let it sit briefly on screen, don't answer it]**
+
+**🤖 The AI will ask something like:**
+> *"That's a thoughtful feature for adaptability. What specific components —
+> both hardware and software — did you use to build this system, particularly
+> for reading the soil moisture and controlling the watering mechanism?"*
+
+**[Don't answer — instead, speak:]**
+
+> "The interview continues — each question building on the last. Once you've
+> done enough exchanges, you end it and generate."
 
 ---
 
 ## ▶ 01:38 — DEMO: SKIP TO GENERATE (10 sec)
 
-**[Switch to the pre-completed project's generate page — use your second
-browser window that already has a finished interview]**
+**[Switch to Tab 2 — the pre-completed project's generate page]**
 
-> "Once you've answered enough questions — the minimum is five exchanges
-> for a case study — you end the interview and generate."
-
-**[Click the "Generate Case Study" button]**
+**[Click "Generate Case Study"]**
 
 > "One click."
 
-**[Wait for the content to render — about 3–5 seconds]**
+**[Wait 3–5 seconds for the content to render]**
 
 ---
 
 ## ▶ 01:48 — DEMO: SHOW THE OUTPUT (12 sec)
 
-**[Scroll slowly through the generated case study, letting each section
-heading be visible for a beat:]**
+**[Scroll slowly through the generated case study — pause briefly on each
+section heading so viewers can read them:]**
+
 - `## Project Overview`
 - `## Problem Statement`
 - `## Solution & Approach`
@@ -157,40 +175,38 @@ heading be visible for a beat:]**
 - `## Key Learnings`
 
 > "Fully structured, written in the student's own voice, from their answers.
-> They can also regenerate with a tone instruction — 'make it more technical',
+> They can regenerate with a tone instruction — 'make it more technical',
 > 'make it shorter' — and it updates the same document."
 
 ---
 
 ## ▶ 02:00 — DEMO: PORTFOLIO LINK (12 sec)
 
-**[Click "Add to Portfolio" button]**
+**[Click "Add to Portfolio" — or if already published, point to the "View public ↗" link]**
 
-**[Switch to Tab 3: `skill-narrate.vercel.app/portfolio/francis-6c050ff3`]**
+**[Switch to Tab 3 — `skill-narrate.vercel.app/portfolio/francis-6c050ff3`]**
 
-> "They publish it — and get one shareable link. No login required
-> for anyone who visits."
+> "They publish it and get one shareable link. No login required for anyone
+> who visits."
 
-**[Scroll slightly to show the output cards on the portfolio page]**
+**[Scroll slightly to show the project output cards on the portfolio page]**
 
-> "This is a real live portfolio. Every published output for one student,
-> accessible to any employer with the link — put it on a CV, send it in
-> a WhatsApp message, done."
+> "This is a real, live portfolio. Every published output — accessible to any
+> employer with the link. Put it on a CV, send it on WhatsApp, done."
 
 ---
 
 ## ▶ 02:12 — TECH CREDIBILITY (18 sec)
 
-**[Back to camera or stay on the portfolio page]**
+**[Back to camera, or stay on the portfolio page]**
 
-> "Under the hood: Next.js 15, Supabase for the database and auth,
-> Google Gemini 2.5 Flash as the AI — routed through OpenRouter."
+> "Under the hood: Next.js 15, Supabase for the database and auth, and
+> Google Gemini 2.5 Flash as the AI — proxied through OpenRouter."
 
-> "One real engineering problem I had to solve: Google AI Studio's free
-> tier has a hard daily cap. Mid-session, your app just dies. So I built
-> an automatic model fallback — if Gemini Flash hits a rate limit, the
-> request silently retries on Gemini Flash Lite. The student never sees
-> an error."
+> "One real problem I had to solve: Google AI Studio's free tier has a hard
+> daily cap. Mid-session, your app just dies. So I built a model fallback
+> chain — if Gemini Flash hits a rate limit, the request automatically retries
+> on Gemini Flash Lite. The student never sees an error."
 
 ---
 
@@ -198,136 +214,145 @@ heading be visible for a beat:]**
 
 **[Simple slide or back to camera]**
 
-> "These are planned — not built yet. An employer discovery page so
-> recruiters can search students by skill. Institution-branded portfolios.
-> Verified project badges from lecturers. And peer feedback on drafts
-> before publishing."
+> "These are planned — not built yet. An employer discovery page so recruiters
+> can find students by skill. Institution-branded portfolios. Verified project
+> badges from lecturers. And peer feedback on drafts before publishing."
 
-> "The goal is a full professional identity layer for TVET students — not
-> just one output, but a career asset they own."
+> "The goal is a full professional identity layer for TVET students — not just
+> one output, but a career asset they own."
 
 ---
 
 ## ▶ 02:44 — CLOSE (10 sec)
 
-**[Hold on the live URL: `skill-narrate.vercel.app`]**
+**[Hold on the browser showing `skill-narrate.vercel.app` — the homepage or portfolio]**
 
-> "SkillNarrate doesn't write for students — it helps them tell their own
-> story, in their own voice, professionally. The platform is live. Try it."
+> "SkillNarrate doesn't write for students — it helps them tell their own story,
+> in their own voice, professionally. The platform is live. Try it."
 
 **[Hold the URL on screen for 3 seconds, then cut]**
 
 ---
+---
+
+# 📋 FULL INTERVIEW Q&A — COPY-PASTE READY
+
+Use this section to **pre-type or paste** answers quickly during recording.
+The questions below are the **real questions the AI asked** in your live session,
+cleaned up. The answers are polished versions of what you typed — same meaning,
+no typos.
 
 ---
 
-## FULL INTERVIEW Q&A — copy-paste ready
+## Project setup — type these on `/projects/new`
 
-Use these if you want to pre-type answers to paste quickly during recording.
-
-### Project details to enter on `/projects/new`
-
-| Field | Value |
-|-------|-------|
+| Field | What to type |
+|-------|-------------|
 | **Project title** | `Smart Irrigation System` |
 | **Description** | `An automated irrigation controller built with Arduino that monitors soil moisture and waters crops only when needed.` |
-| **Output type** | `Case Study` |
+| **Output type** | Select **Case Study** |
 
 ---
 
-### Exchange 1
+## Exchange 1
 
-**AI opens with** *(expected — based on the case study opening prompt in the code)*:
-> "What specific problem or need were you trying to solve with the Smart Irrigation
-> System — what was happening that made you decide to build it?"
+### 🤖 AI Question (real, from your session):
+> "Could you please describe the specific problem or challenge within Kenyan
+> agriculture that your 'Smart Irrigation System' aims to address?"
 
-**YOUR ANSWER — paste this:**
+### ✍️ Your answer — paste this exactly:
 ```
-Farmers in my area were watering their crops manually, sometimes twice a day, even
-when the soil was already wet. They were wasting water and their crops were getting
-overwatered. I wanted to automate it so the system only waters when the soil moisture
-sensor reads below a set threshold.
-```
-
----
-
-### Exchange 2
-
-**AI follow-up** *(will adapt to your answer — likely about the threshold or sensor)*:
-> Something like: "You mentioned the moisture threshold — how did you decide what
-> level to set it at, and could the farmer adjust it?"
-
-**YOUR ANSWER — paste this:**
-```
-I set the default at 40% soil moisture. I also added a small potentiometer on the
-circuit board so the farmer can turn it up or down depending on the crop. Tomatoes
-need more water than maize, so I wanted it to be flexible without reprogramming.
+Farmers in my area were watering their crops manually, sometimes twice a day,
+even when the soil already had enough water. They were wasting water and their
+crops were getting overwatered. I wanted to automate it so the system only
+waters when the soil moisture sensor reads below a set threshold.
 ```
 
 ---
 
-### Exchange 3
+## Exchange 2
 
-**AI follow-up** *(will adapt — likely about the hardware components or build process)*:
-> Something like: "What components did you use to build this, and what was the
-> hardest part of getting the hardware to work reliably?"
+### 🤖 AI Question (real, from your session):
+> "That's a clear problem you've identified. Can you tell me more about how your
+> 'Smart Irrigation System' actually works to achieve this automation, from the
+> sensor reading to the watering action?"
 
-**YOUR ANSWER — paste this:**
+### ✍️ Your answer — paste this exactly:
 ```
-I used an Arduino Uno, a capacitive soil moisture sensor, a 5V relay module, and a
-small water pump. The hardest part was the relay — it kept triggering false positives
-when the pump switched on because of voltage spikes. I fixed it by adding a flyback
-diode across the relay coil.
-```
-
----
-
-### Exchange 4
-
-**AI follow-up** *(will adapt — likely about testing or results)*:
-> Something like: "How did you test it in the field, and what results did you
-> actually see when it was running?"
-
-**YOUR ANSWER — paste this:**
-```
-I tested it on a small vegetable plot at my school's farm for two weeks. Water usage
-went down noticeably compared to manual watering, and none of the plants showed signs
-of overwatering. The lecturer who supervised the project said it was the most practical
-solution we'd submitted that year.
+I set the default threshold at 40% soil moisture, but I added a small
+potentiometer on the circuit board so the farmer can adjust it depending on
+the crop. Tomatoes need more water than maize, so I wanted it to be flexible
+without having to reprogram anything.
 ```
 
 ---
 
-### Exchange 5
+## Exchange 3
 
-**AI follow-up** *(will adapt — likely about what you learned or what you'd improve)*:
-> Something like: "What's one thing you would improve if you built this again, and
-> what did this project teach you as an engineer?"
+### 🤖 AI Question (real, from your session):
+> "That's a thoughtful feature for adaptability. What specific components —
+> both hardware and software — did you use to build this system, particularly
+> for reading the soil moisture and controlling the watering mechanism?"
 
-**YOUR ANSWER — paste this:**
+### ✍️ Your answer — paste this exactly:
 ```
-I would add a GSM module so the farmer gets a text message when the tank is empty or
-if the sensor fails. Right now it only works if someone is nearby to notice. This
-project taught me that hardware and software both have to fail gracefully — the relay
-diode fix was a lesson I won't forget.
+I used an Arduino Uno as the main controller, a capacitive soil moisture sensor,
+a 5V relay module to switch the pump on and off, and a small submersible water
+pump connected to a drip irrigation line. For software I used the Arduino IDE to
+write the control logic — it reads the sensor every 10 seconds and triggers the
+relay when the moisture drops below the threshold.
 ```
 
 ---
 
-> **After Exchange 5** the "End Interview" button becomes active (the code sets
-> `minExchanges = 5` for case study). Click it, then click "Generate Case Study".
+## Exchange 4
+
+### 🤖 AI Question (the AI will adapt — likely about testing or results):
+> Something like: "How did you test the system and what results did you observe
+> once it was running?"
+
+### ✍️ Your answer — paste this exactly:
+```
+I tested it on a small vegetable plot at my school's farm for two weeks. Water
+usage dropped compared to manual watering, and none of the plants showed signs
+of overwatering. The lecturer who supervised the project said it was the most
+practical solution submitted that year.
+```
 
 ---
 
-## TIMING SUMMARY
+## Exchange 5
 
-| Section | Says | Clock |
-|---------|------|-------|
+### 🤖 AI Question (the AI will adapt — likely about improvements or lessons):
+> Something like: "What would you improve if you built this again, and what did
+> this project teach you?"
+
+### ✍️ Your answer — paste this exactly:
+```
+I would add a GSM module so the farmer receives a text message when the water
+tank is empty or if the sensor fails. Right now someone has to be nearby to
+notice. This project taught me that both hardware and software need to fail
+gracefully — getting the relay to stop triggering false positives was the
+hardest part and I learned a lot from solving it.
+```
+
+---
+
+> ✅ After Exchange 5 the **"End Interview"** button becomes active.
+> Click it → redirects to the generate page → click **"Generate Case Study"**.
+
+---
+---
+
+# ⏱ TIMING SUMMARY
+
+| Section | Duration | Running total |
+|---------|----------|---------------|
 | Hook | 0:10 | 0:10 |
 | Problem | 0:18 | 0:28 |
 | Create project | 0:20 | 0:48 |
-| Q1 + answer | 0:20 | 1:08 |
-| Q2 + callout moment | 0:30 | 1:38 |
+| Q1 + answer (live) | 0:18 | 1:06 |
+| Q2 + adaptive callout + answer (live) | 0:32 | 1:38 |
 | Skip to generate | 0:10 | 1:48 |
 | Show output | 0:12 | 2:00 |
 | Portfolio link | 0:12 | 2:12 |
@@ -335,8 +360,9 @@ diode fix was a lesson I won't forget.
 | What's next | 0:14 | 2:44 |
 | Close | 0:10 | **2:54** |
 
-6 seconds to spare before the 3:00 limit.
+**6 seconds of buffer** before the 3:00 hard limit.
 
 ---
 
-*Delete this file (`DEMO_SCRIPT.md`) before submitting. Do not commit it to the public repo.*
+*🗑️ Delete this file (`DEMO_SCRIPT.md`) before submitting your hackathon entry.*
+*Run: `git rm DEMO_SCRIPT.md` or just delete it manually.*
