@@ -335,7 +335,7 @@ src/
 
 ## 7. Future Roadmap
 
-The following are planned directions for SkillNarrate **after the hackathon window or after submissio of the project for review**.
+The following are planned directions for SkillNarrate **after the hackathon window or after submission of the project for review**.
 None of these features exist in the current codebase.
 
 - **Admin portal** — internal tooling for platform management: user oversight,
