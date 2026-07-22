@@ -290,55 +290,77 @@ without having to reprogram anything.
 ## Exchange 3
 
 ### 🤖 AI Question (real, from your session):
-> "That's a thoughtful feature for adaptability. What specific components —
-> both hardware and software — did you use to build this system, particularly
-> for reading the soil moisture and controlling the watering mechanism?"
+> "That's a thoughtful design choice for flexibility. Can you describe the specific
+> hardware components you used for the soil moisture sensing and the irrigation
+> mechanism itself, such as the pump or valves?"
 
 ### ✍️ Your answer — paste this exactly:
 ```
-I used an Arduino Uno as the main controller, a capacitive soil moisture sensor,
-a 5V relay module to switch the pump on and off, and a small submersible water
-pump connected to a drip irrigation line. For software I used the Arduino IDE to
-write the control logic — it reads the sensor every 10 seconds and triggers the
-relay when the moisture drops below the threshold.
+For sensing I used a capacitive soil moisture sensor — I chose capacitive over
+resistive because it doesn't corrode in wet soil. The main controller is an
+Arduino Uno. To control the water flow I used a 5V relay module connected to a
+small submersible pump, and the water is distributed through a basic drip
+irrigation line I attached to the pipe outlet.
 ```
 
 ---
 
 ## Exchange 4
 
-### 🤖 AI Question (the AI will adapt — likely about testing or results):
-> Something like: "How did you test the system and what results did you observe
-> once it was running?"
+### 🤖 AI Question (real, from your session):
+> "That's a clear setup. What software did you write to tie all of these
+> hardware components together, and how did the Arduino know when to trigger
+> the relay and start watering?"
 
 ### ✍️ Your answer — paste this exactly:
 ```
-I tested it on a small vegetable plot at my school's farm for two weeks. Water
-usage dropped compared to manual watering, and none of the plants showed signs
-of overwatering. The lecturer who supervised the project said it was the most
-practical solution submitted that year.
+I wrote the control logic in the Arduino IDE using C++. The loop reads the
+moisture sensor every 10 seconds. If the reading drops below the threshold
+set by the potentiometer, the relay closes and the pump switches on. When the
+moisture goes back above the threshold the relay opens and the pump stops.
+I also added a 30-second minimum run time so the pump doesn't flicker on and
+off rapidly when the soil is right at the boundary.
 ```
 
 ---
 
 ## Exchange 5
 
-### 🤖 AI Question (the AI will adapt — likely about improvements or lessons):
-> Something like: "What would you improve if you built this again, and what did
-> this project teach you?"
+### 🤖 AI Question (the AI will adapt — likely about testing and results):
+> Something like: "How did you test the system once it was built, and what
+> results did you actually observe when it was running?"
 
 ### ✍️ Your answer — paste this exactly:
 ```
-I would add a GSM module so the farmer receives a text message when the water
-tank is empty or if the sensor fails. Right now someone has to be nearby to
-notice. This project taught me that both hardware and software need to fail
-gracefully — getting the relay to stop triggering false positives was the
-hardest part and I learned a lot from solving it.
+I tested it on a small vegetable plot at my school's farm for two weeks. Water
+usage dropped compared to manual watering, and none of the plants showed signs
+of overwatering. The lecturer who supervised the project said it was the most
+practical solution submitted that year. The farmers who saw it were interested
+because it meant they didn't have to check the field twice a day.
 ```
 
 ---
 
-> ✅ After Exchange 5 the **"End Interview"** button becomes active.
+## Exchange 6
+
+### 🤖 AI Question (the AI will adapt — likely about challenges or improvements):
+> Something like: "What was the biggest challenge you faced building this, and
+> what would you improve if you built it again?"
+
+### ✍️ Your answer — paste this exactly:
+```
+The hardest part was the relay — it kept triggering false positives when the
+pump switched on because the motor caused voltage spikes on the board. I fixed
+it by adding a flyback diode across the relay coil to absorb the spike. If I
+built it again I would add a GSM module so the farmer gets a text message when
+the tank is empty or the sensor fails. Right now someone has to be physically
+nearby to notice a problem.
+```
+
+---
+
+> ✅ After Exchange 5 or 6 the **"End Interview"** button becomes active
+> (minimum is 5 exchanges for a case study — the button appears once you hit that).
 > Click it → redirects to the generate page → click **"Generate Case Study"**.
 
 ---
