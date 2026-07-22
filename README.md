@@ -333,6 +333,32 @@ src/
 
 ---
 
+## 7. Future Roadmap
+
+The following are planned directions for SkillNarrate **after the hackathon window**.
+None of these features exist in the current codebase.
+
+- **Admin portal** — internal tooling for platform management: user oversight,
+  institution data management, and content moderation.
+- **Employer discovery page** — a public-facing tab where employers can browse
+  student profiles and published projects, filterable by skill area or institution.
+- **Institution request flow** — students whose school is not in the seeded list can
+  submit an addition request; an admin reviews and approves it before it appears in
+  the dropdown.
+- **Verified project badges** — a mechanism for lecturers or mentors to confirm that
+  a student's project claims are accurate, adding a layer of credibility to published
+  outputs.
+- **Institution-branded portfolio pages** — aggregated views showing all published
+  student work from a given school, usable by institutions for showcase or recruitment.
+- **Peer and mentor feedback** — a draft review step where a student can share a
+  generated output privately with a mentor or peer before publishing it to their
+  portfolio.
+- **ATS-friendly resume bullet export** — a one-click export that converts a project's
+  key points into bullet-point format suitable for pasting into a CV or ATS-scanned
+  resume.
+
+---
+
 ## License
 
 MIT — free to use, modify, and build upon.
