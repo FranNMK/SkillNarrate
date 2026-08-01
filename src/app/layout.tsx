@@ -15,6 +15,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import PageProgressBar from "@/components/ui/PageProgressBar";
+import SessionEnforcer from "@/components/features/SessionEnforcer";
 
 export const metadata: Metadata = {
   title: {
@@ -44,6 +45,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <PageProgressBar />
+        <SessionEnforcer />
         {children}
       </body>
     </html>

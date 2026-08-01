@@ -39,6 +39,23 @@ function LoginForm() {
   const [pending, setPending] = useState(false);
   const [googlePending, setGooglePending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+
+  // Write session-control flags BEFORE the server action runs.
+  // If rememberMe is false, we mark the session as ephemeral so that
+  // SessionEnforcer will sign the user out when the browser is closed.
+  // If rememberMe is true, we clear any previous ephemeral markers.
+  function applySessionFlags(remember: boolean) {
+    if (remember) {
+      // Persistent login — clear any ephemeral markers from previous logins
+      localStorage.removeItem("sn_was_ephemeral");
+      sessionStorage.removeItem("sn_ephemeral");
+    } else {
+      // Ephemeral login — mark both stores
+      localStorage.setItem("sn_was_ephemeral", "1");
+      sessionStorage.setItem("sn_ephemeral", "1");
+    }
+  }
 
   return (
     <div className="w-full max-w-md p-8 bg-white rounded-2xl shadow-sm border border-gray-200">
@@ -98,6 +115,7 @@ function LoginForm() {
       <form
         action={async (formData) => {
           setPending(true);
+          applySessionFlags(rememberMe);
           await signInAction(formData);
           setPending(false);
         }}
@@ -151,6 +169,17 @@ function LoginForm() {
             </button>
           </div>
         </div>
+
+        {/* ── Remember me ── */}
+        <label className="flex items-center gap-2.5 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            className="w-4 h-4 rounded border-gray-300 accent-[var(--color-brand-primary)] cursor-pointer"
+          />
+          <span className="text-sm text-gray-600">Remember me on this device</span>
+        </label>
 
         <button
           type="submit"

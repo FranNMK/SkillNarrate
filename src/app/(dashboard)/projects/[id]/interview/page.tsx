@@ -67,7 +67,7 @@ export default async function InterviewPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: project, error: projectError } = await (supabase as any)
     .from("projects")
-    .select("id, title, description, output_type, raw_interview_answers, interview_completed")
+    .select("id, title, description, output_type, raw_interview_answers, interview_completed, pending_ai_question")
     .eq("id", id)
     .eq("user_id", user.id)  // belt-and-suspenders ownership check
     .single();
@@ -89,6 +89,13 @@ export default async function InterviewPage({
   const initialHistory: InterviewQA[] = Array.isArray(project.raw_interview_answers)
     ? (project.raw_interview_answers as InterviewQA[])
     : [];
+
+  // Step 5 — extract the last unanswered AI question (null if none)
+  // This is the question the AI asked right before the student navigated away.
+  const initialPendingQuestion: string | null =
+    typeof project.pending_ai_question === "string"
+      ? project.pending_ai_question
+      : null;
 
   return (
     <div className="flex flex-col" style={{ minHeight: "calc(100vh - 160px)" }}>
@@ -121,6 +128,7 @@ export default async function InterviewPage({
           projectTitle={project.title}
           outputType={project.output_type as OutputType}
           initialHistory={initialHistory}
+          initialPendingQuestion={initialPendingQuestion}
         />
       </div>
     </div>

@@ -43,7 +43,8 @@ interface InterviewChatProps {
   projectId: string;
   projectTitle: string;
   outputType: OutputType;
-  initialHistory: InterviewQA[]; // existing Q&As from DB (empty for new interview)
+  initialHistory: InterviewQA[];         // existing Q&As from DB (empty for new interview)
+  initialPendingQuestion: string | null; // last unanswered AI question from DB
 }
 
 // A "message" in the UI — either an AI question or a student answer
@@ -69,19 +70,24 @@ export default function InterviewChat({
   projectTitle,
   outputType,
   initialHistory,
+  initialPendingQuestion,
 }: InterviewChatProps) {
   // ── State ──────────────────────────────────────────────────
   // conversationHistory is the "source of truth" that we save to the DB
   const [history, setHistory] = useState<InterviewQA[]>(initialHistory);
 
-  // chatMessages is what we display — built from history + any in-progress message
-  const [messages, setMessages] = useState<ChatMessage[]>(() =>
-    // On first render, convert existing history to display messages
-    initialHistory.flatMap((qa) => [
+  // chatMessages is what we display — built from history + any in-progress message.
+  // On resume, if there was a pending question we append it back to the display.
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    const fromHistory = initialHistory.flatMap((qa) => [
       { role: "ai" as const, text: qa.question },
       { role: "student" as const, text: qa.answer },
-    ])
-  );
+    ]);
+    if (initialPendingQuestion) {
+      fromHistory.push({ role: "ai" as const, text: initialPendingQuestion });
+    }
+    return fromHistory;
+  });
 
   const [currentAnswer, setCurrentAnswer] = useState("");
   const [isLoading, setIsLoading] = useState(false);   // waiting for AI response
@@ -91,19 +97,48 @@ export default function InterviewChat({
   // Track whether the "End Interview" button should be shown
   const [canFinish, setCanFinish] = useState(initialHistory.length >= 5);
 
-  // Track the current pending AI question (before the student answers)
-  const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
+  // Track the current pending AI question (before the student answers).
+  // Initialise from DB so a resumed session shows the last unanswered question.
+  const [pendingQuestion, setPendingQuestion] = useState<string | null>(
+    initialPendingQuestion ?? null
+  );
 
   // Ref to scroll to the bottom of the chat after each new message
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Track if the opening question has been fetched
-  const hasStarted = useRef(initialHistory.length > 0);
+  // Track if the opening question has been fetched.
+  // If there's a pending question from DB we treat the interview as already started.
+  const hasStarted = useRef(initialHistory.length > 0 || !!initialPendingQuestion);
 
   // ── Scroll to bottom on new messages ───────────────────────
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, pendingQuestion, isLoading]);
+
+  // ── Save the conversation to the DB ───────────────────────
+  // pendingQ: pass the current unanswered AI question (or null to clear it)
+  const saveProgress = useCallback(async (
+    updatedHistory: InterviewQA[],
+    pendingQ: string | null
+  ) => {
+    setIsSaving(true);
+    try {
+      await fetch("/api/interview/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId,
+          conversationHistory: updatedHistory,
+          pendingAiQuestion: pendingQ,
+        }),
+      });
+    } catch {
+      // Non-fatal — user can still continue. Show a subtle warning.
+      console.warn("Auto-save failed. Your progress may not be saved.");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [projectId]);
 
   // ── Call the API to get the next question ──────────────────
   const fetchNextQuestion = useCallback(
@@ -137,31 +172,17 @@ export default function InterviewChat({
 
         // Update whether the student can end the interview
         setCanFinish(data.canFinish);
+
+        // Persist the pending question to the DB so it survives a page refresh
+        saveProgress(updatedHistory, data.question);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
       } finally {
         setIsLoading(false);
       }
     },
-    [projectId, projectTitle, outputType]
+    [projectId, projectTitle, outputType, saveProgress]
   );
-
-  // ── Save the conversation to the DB ───────────────────────
-  const saveProgress = useCallback(async (updatedHistory: InterviewQA[]) => {
-    setIsSaving(true);
-    try {
-      await fetch("/api/interview/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId, conversationHistory: updatedHistory }),
-      });
-    } catch {
-      // Non-fatal — user can still continue. Show a subtle warning.
-      console.warn("Auto-save failed. Your progress may not be saved.");
-    } finally {
-      setIsSaving(false);
-    }
-  }, [projectId]);
 
   // ── Fetch the opening question on first render (new interview) ──
   useEffect(() => {
@@ -189,10 +210,11 @@ export default function InterviewChat({
     setHistory(updatedHistory);
     setPendingQuestion(null);
 
-    // 3. Save to DB (non-blocking — runs in background)
-    saveProgress(updatedHistory);
+    // 3. Save to DB — clear pending_ai_question (the answer has now been recorded)
+    saveProgress(updatedHistory, null);
 
-    // 4. Get the next question
+    // 4. Get the next question (saveProgress inside fetchNextQuestion will
+    //    store the new pending question once it arrives)
     await fetchNextQuestion(updatedHistory, trimmedAnswer);
   };
 
@@ -384,11 +406,15 @@ function EndInterviewButton({
     setEndError(null);
 
     try {
-      // 1. Save final interview state
+      // 1. Save final interview state — clear any pending question since we're done
       await fetch("/api/interview/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId, conversationHistory: history }),
+        body: JSON.stringify({
+          projectId,
+          conversationHistory: history,
+          pendingAiQuestion: null,
+        }),
       });
 
       // 2. Mark interview as complete

@@ -67,6 +67,9 @@ export default function SignOutButton() {
                 className="flex-1"
                 action={async () => {
                   setPending(true);
+                  // Clear ephemeral session markers on intentional sign-out
+                  localStorage.removeItem("sn_was_ephemeral");
+                  sessionStorage.removeItem("sn_ephemeral");
                   await signOutAction();
                 }}
               >

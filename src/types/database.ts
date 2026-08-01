@@ -72,6 +72,7 @@ export type Project = {
   output_type: OutputType;         // chosen at project creation
   raw_interview_answers: InterviewQA[]; // typed JSONB
   interview_completed: boolean;
+  pending_ai_question: string | null;  // last AI question awaiting an answer
   logo_url: string | null;         // optional project logo (Supabase Storage URL)
   demo_video_url: string | null;   // optional YouTube / Loom embed URL
   demo_link: string | null;        // optional live demo URL

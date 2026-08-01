@@ -32,6 +32,7 @@ import type { InterviewQA } from "@/types/database";
 interface SaveRequestBody {
   projectId: string;
   conversationHistory: InterviewQA[];
+  pendingAiQuestion?: string | null; // the latest AI question not yet answered
 }
 
 export async function POST(request: Request) {
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
 
     // Parse body
     const body: SaveRequestBody = await request.json();
-    const { projectId, conversationHistory } = body;
+    const { projectId, conversationHistory, pendingAiQuestion } = body;
 
     if (!projectId || !Array.isArray(conversationHistory)) {
       return NextResponse.json(
@@ -58,11 +59,20 @@ export async function POST(request: Request) {
       );
     }
 
+    // Build the update payload — always persist the Q&A history and the
+    // pending question (null clears it; a string saves it for resume).
+    const updatePayload: Record<string, unknown> = {
+      raw_interview_answers: conversationHistory,
+    };
+    if (pendingAiQuestion !== undefined) {
+      updatePayload.pending_ai_question = pendingAiQuestion ?? null;
+    }
+
     // Save to database — update only if user owns the project
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error: updateError } = await (supabase as any)
       .from("projects")
-      .update({ raw_interview_answers: conversationHistory })
+      .update(updatePayload)
       .eq("id", projectId)
       .eq("user_id", user.id);
 
