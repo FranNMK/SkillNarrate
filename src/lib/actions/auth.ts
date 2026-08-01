@@ -45,9 +45,10 @@ import { createClient } from "@/lib/supabase/server";
 // We normalise here so the user always sees a useful message.
 function redirectWithError(path: string, message: string | undefined | null): never {
   const trimmed = typeof message === "string" ? message.trim() : "";
-  // Reject empty strings and JSON-serialised objects like "{}" or "[]" that
-  // Supabase occasionally surfaces when the server returns an empty error body.
-  const isJunk = trimmed.length === 0 || /^\{.*\}$|^\[.*\]$/.test(trimmed);
+  // Reject ONLY truly empty strings or bare "{}" / "[]" (no content between braces).
+  // Do NOT reject real Supabase error JSON like {"code":"..."} — those contain
+  // useful info and should be shown (or passed through the msg extraction below).
+  const isJunk = trimmed.length === 0 || /^\{\s*\}$|^\[\s*\]$/.test(trimmed);
   const msg = isJunk ? "An unexpected error occurred. Please try again." : trimmed;
   redirect(`${path}?error=${encodeURIComponent(msg)}`);
 }
@@ -66,7 +67,7 @@ export async function signUpAction(formData: FormData) {
 
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-  const fullName = formData.get("full_name") as string;
+  const fullName = (formData.get("full_name") as string)?.trim();
 
   if (!email || !password || !fullName) {
     redirectWithError("/signup", "All fields are required.");
@@ -90,16 +91,35 @@ export async function signUpAction(formData: FormData) {
   });
 
   if (error) {
-    // error.message can be undefined on certain Supabase error shapes.
-    // Pull the best available human-readable message from the error object.
-    const msg =
-      error.message ||
+    // error.message can be undefined or a raw JSON string on certain Supabase
+    // error shapes. Try to extract a human-readable message in order of preference.
+    let msg: string =
       // @ts-expect-error — Supabase error objects sometimes have extra fields
       error.msg ||
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (error as any).error_description ||
-      (typeof error.code === "string" ? `Sign-up failed (${error.code})` : null) ||
-      "Sign-up failed. Please check your details and try again.";
+      error.message ||
+      "";
+
+    // If msg is a JSON string like {"code":"email_address_invalid","message":"..."}
+    // unwrap the inner message field so the user sees plain text.
+    if (msg.startsWith("{")) {
+      try {
+        const parsed = JSON.parse(msg) as Record<string, unknown>;
+        msg =
+          (typeof parsed.message === "string" ? parsed.message : "") ||
+          (typeof parsed.error_description === "string" ? parsed.error_description : "") ||
+          (typeof parsed.code === "string" ? `Sign-up failed (${parsed.code})` : "") ||
+          msg;
+      } catch {
+        // leave msg as-is if it isn't valid JSON
+      }
+    }
+
+    if (!msg || msg.trim().length === 0) {
+      msg = "Sign-up failed. Please check your details and try again.";
+    }
+
     redirectWithError("/signup", msg);
   }
 

@@ -86,8 +86,11 @@ function SignupForm() {
       <form
         action={async (formData) => {
           setPending(true);
-          await signUpAction(formData);
-          setPending(false);
+          try {
+            await signUpAction(formData);
+          } finally {
+            setPending(false);
+          }
         }}
         className="space-y-4"
       >
