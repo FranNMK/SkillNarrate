@@ -136,3 +136,38 @@ export async function completeInterviewAction(formData: FormData) {
   revalidatePath(`/projects/${projectId}`);
   redirect(`/projects/${projectId}/generate`);
 }
+
+// ────────────────────────────────────────────────────────────
+// DELETE PROJECT
+// ────────────────────────────────────────────────────────────
+// Deletes a project (and cascading outputs) owned by the signed-in user.
+// Returns an error string on failure so the client can surface it.
+// ────────────────────────────────────────────────────────────
+export async function deleteProjectAction(
+  projectId: string
+): Promise<{ error?: string }> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { error: "Not authenticated." };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error: deleteError } = await (supabase as any)
+    .from("projects")
+    .delete()
+    .eq("id", projectId)
+    .eq("user_id", user.id); // ownership guard
+
+  if (deleteError) {
+    return { error: deleteError.message };
+  }
+
+  revalidatePath("/dashboard");
+  return {};
+}
