@@ -91,6 +91,16 @@ export async function signUpAction(formData: FormData) {
   });
 
   if (error) {
+    // Log the raw error server-side so it appears in Vercel Function logs.
+    // This makes future debugging trivial — you can see the real Supabase message.
+    console.error("[signUpAction] Supabase signUp error:", {
+      message: error.message,
+      status: error.status,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      code: (error as any).code,
+      appUrl: process.env.NEXT_PUBLIC_APP_URL,
+    });
+
     // error.message can be undefined or a raw JSON string on certain Supabase
     // error shapes. Try to extract a human-readable message in order of preference.
     let msg: string =
